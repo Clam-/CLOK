@@ -34,6 +34,11 @@ mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----\n";
 
-void rootLoop() {
-  
+unsigned long ROOTCA_NEXT_CHECK_TIME = 1000000; // 1000 seconds start (16~mins)
+
+void rootCATick(unsigned long curtime) {
+  if (curTime > ROOTCA_NEXT_CHECK_TIME) {
+    
+    TZ_NEXT_CHECK_TIME + 28800000; // (8*60*60*1000) 8 hour checks.
+  }
 }

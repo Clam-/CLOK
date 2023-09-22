@@ -13,3 +13,11 @@ void checkAndDoUpdate() {
   }
 }
 
+unsigned long TZ_NEXT_CHECK_TIME = 0;
+
+void tzTick(unsigned long curtime) {
+  if (curTime > TZ_NEXT_CHECK_TIME) {
+    
+    TZ_NEXT_CHECK_TIME + 21600000; // (6*60*60*1000) 6 hour checks.
+  }
+}

@@ -14,6 +14,7 @@ Preferences preferences;
 
 void WebTask(void *pvParameters);
 void BLETask(void *pvParameters);
+void BackgroundTasks(void *pvParameters);
 
 void setup() {
   // put your setup code here, to run once:
