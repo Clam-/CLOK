@@ -12,9 +12,9 @@ Preferences preferences;
 #include <WiFi.h>
 #include <WiFiMulti.h>
 
-void WebTask(void *pvParameters);
-void BLETask(void *pvParameters);
-void BackgroundTasks(void *pvParameters);
+void WiFiTask(void *pvParameters); // handling wifi loop
+void BLETask(void *pvParameters); // handling BLE loop
+void BackgroundTasks(void *pvParameters);  //webfetch, update, etc...
 
 void setup() {
   // put your setup code here, to run once:

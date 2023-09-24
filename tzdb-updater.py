@@ -7,7 +7,7 @@
 # You probably want to call it something like:
 # TOPDIR=$HOME/tzdir env/bin/python tzdb-updater.py
 
-from os import environ, listdir, mkdir
+from os import environ, scandir, mkdir
 from os.path import join
 import requests
 import tarfile
@@ -46,7 +46,12 @@ with TemporaryDirectory() as TMPDIR:
     r.raw.close()
 
     # append extracted foldername to TMPDIR
-    TMPDIR = join(TMPDIR, listdir(TMPDIR)[0])
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_dir():
+                TMPDIR = join(TMPDIR, entry.name)
+                break # assume single folder nested.
+
     with TemporaryDirectory() as TOPTZDIR:
         print(f"RUNNING: {' '.join(['make', f'TOPDIR={TOPTZDIR}', 'install'])}")
         subprocess.run(f"make TOPDIR={TOPTZDIR} install", shell=True, cwd=TMPDIR,
