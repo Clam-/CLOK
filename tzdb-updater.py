@@ -46,7 +46,7 @@ with TemporaryDirectory() as TMPDIR:
     r.raw.close()
 
     # append extracted foldername to TMPDIR
-    with scandir(path) as it:
+    with scandir(TMPDIR) as it:
         for entry in it:
             if entry.is_dir():
                 TMPDIR = join(TMPDIR, entry.name)
