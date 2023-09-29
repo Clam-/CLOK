@@ -1,7 +1,8 @@
 // include root let's encrypt
 // create some update method... to update once a year... (or two?)
 
-const char* rootCACertificate = \
+const char* defaultRootCAURL = "https://letsencrypt.org/certs/isrgrootx1.pem";
+const char* defaultRootCA = \
 "-----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
@@ -34,11 +35,46 @@ mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----\n";
 
-unsigned long ROOTCA_NEXT_CHECK_TIME = 1000000; // 1000 seconds start (16~mins)
+unsigned long ROOTCA_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
+unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
+char* ROOTCA = NULL;
 
-void rootCATick(unsigned long curtime) {
-  if (curTime > ROOTCA_NEXT_CHECK_TIME) {
-    
-    TZ_NEXT_CHECK_TIME + 28800000; // (8*60*60*1000) 8 hour checks.
+void rootCAsetup() {
+  // check if certURL exists:
+  String url = preferences.getString("ROOTCA-URL");
+  // if doesn't exist, put the default one in
+  if (url == "") { preferences.putString(defaultRootCAURL); }
+
+  // check if cert exists in preferences
+  size_t size = preferences.getUInt("ROOTCA-len", 0);
+  // if doesn't exist, put the default one in, along with length
+  if (size == 0) { setRootCA(defaultRootCA, "") }
+  loadRootCA();
+}
+
+const char* loadRootCA() {
+  size_t size = preferences.getUInt("ROOTCA-len", 0)
+  char* buffer = new char[size];
+  preferences.getString("ROOTCA", buffer, size);
+  ROOTCA = buffer;
+}
+
+void setRootCA(const char* cert, const char* ETag) {
+  // check and nuke all ROOTCA if not null
+  if (ROOTCA != NULL) { delete[] ROOTCA; }
+  size_t size = preferences.putString("ROOTCA-ETag", ETag);
+  //preferences.putUInt("ROOTCA-ETag-len", size);
+  size = preferences.putString("ROOTCA", cert);
+  preferences.putUInt("ROOTCA-len", size);
+}
+
+void processNewCA(String &body, String &etag) {
+  setRootCA(body.c_str(), etag.c_str());
+}
+
+void rootCACheck(unsigned long now) {
+  if (now - ROOTCA_PREV_TIME > TZ_CHECK_TIME) {
+    getURL(preferences.getString("ROOTCA-URL"), NULL, processNewCA, preferences.getString("ROOTCA-ETag"));
+    ROOTCA_PREV_TIME = now;
   }
 }
