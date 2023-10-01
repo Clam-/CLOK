@@ -1,8 +1,12 @@
 // include root let's encrypt
 // create some update method... to update once a year... (or two?)
 
-const char* defaultRootCAURL = "https://letsencrypt.org/certs/isrgrootx1.pem";
-const char* defaultRootCA = \
+// BLE options
+BLEStringCharacteristic BLE_RootCA_URL("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite);
+BLE_RootCA_URL.setEventHandler(BLEWritten, rootCAURLwritten);
+
+const char* RootCA_URL_default = "https://letsencrypt.org/certs/isrgrootx1.pem";
+const char* RootCA_default = \
 "-----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
@@ -38,25 +42,32 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 unsigned long ROOTCA_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
 unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
 char* ROOTCA = NULL;
+size_t ROOTCA_LEN = 0;
 
 void rootCAsetup() {
+  // BLE setup
+  clokService.addCharacteristic(BLE_RootCA_URL);
   // check if certURL exists:
   String url = preferences.getString("ROOTCA-URL");
   // if doesn't exist, put the default one in
-  if (url == "") { preferences.putString(defaultRootCAURL); }
+  if (url == "") { preferences.putString(RootCA_URL_default); }
 
   // check if cert exists in preferences
   size_t size = preferences.getUInt("ROOTCA-len", 0);
   // if doesn't exist, put the default one in, along with length
-  if (size == 0) { setRootCA(defaultRootCA, "") }
+  if (size == 0) { setRootCA(RootCA_default, "") }
   loadRootCA();
 }
 
 const char* loadRootCA() {
   size_t size = preferences.getUInt("ROOTCA-len", 0)
-  char* buffer = new char[size];
-  preferences.getString("ROOTCA", buffer, size);
-  ROOTCA = buffer;
+  if (size > ROOTCA_LEN) {
+    if (ROOTCA != NULL) { delete[] ROOTCA; }
+    ROOTCA_LEN = size;
+    char* buffer = new char[ROOTCA_LEN];
+    ROOTCA = buffer;
+  }
+  preferences.getString("ROOTCA", ROOTCA, size);
 }
 
 void setRootCA(const char* cert, const char* ETag) {
@@ -66,15 +77,20 @@ void setRootCA(const char* cert, const char* ETag) {
   //preferences.putUInt("ROOTCA-ETag-len", size);
   size = preferences.putString("ROOTCA", cert);
   preferences.putUInt("ROOTCA-len", size);
+  loadRootCA();
 }
 
 void processNewCA(String &body, String &etag) {
   setRootCA(body.c_str(), etag.c_str());
 }
 
-void rootCACheck(unsigned long now) {
+void rootCACheck(unsigned long &now) {
   if (now - ROOTCA_PREV_TIME > TZ_CHECK_TIME) {
-    getURL(preferences.getString("ROOTCA-URL"), NULL, processNewCA, preferences.getString("ROOTCA-ETag"));
+    getURL(preferences.getString("ROOTCA-URL").c_str(), NULL, processNewCA, preferences.getString("ROOTCA-ETag"));
     ROOTCA_PREV_TIME = now;
   }
+}
+
+void rootCAURLwritten(BLEDevice central, BLECharacteristic characteristic) {
+  preferences.putString(characteristic.value());
 }

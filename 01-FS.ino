@@ -7,6 +7,7 @@ void FSSetup(){
   }
 }
 
+// I'm using ETag I don't need this after all...
 bool compareFileContents(const char *s, const char * path){
     Serial.printf("Reading file: %s\r\n", path);
     int len = strlen(s);
@@ -23,3 +24,6 @@ bool compareFileContents(const char *s, const char * path){
     if (strcmp(buf, s)==0) {return true;}
     return false;
 }
+
+
+

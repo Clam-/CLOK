@@ -1,5 +1,5 @@
 #define DEST_FS_USES_LITTLEFS
-
+#include <Arduino.h>
 #include "FS.h"
 #include <LittleFS.h>
 
@@ -14,6 +14,8 @@ Preferences preferences;
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
 void BackgroundTasks(void *pvParameters);  //webfetch, update, etc...
+void ClockTask(void *pvParameters);  //webfetch, update, etc...
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -21,15 +23,10 @@ void setup() {
   FSSetup();
   preferences.begin("clok", false);
   BLESetup();
-  webSetup();  
+  TZSetup();
+  WiFiSetup();
+  webSetup();
   Serial.println("Startup complete.");
-}
-
-
-
-void updateTZdata() {
-  // poll db
-  setenv("TZ", tz, 1);
 }
 
 void loop() {
@@ -40,4 +37,13 @@ void loop() {
   // meebee tick timezone rule update (?????)
   
   delay(100);
+}
+
+void BackgroundTasks(void *pvParameters){
+  for (;;){
+    unsigned long now = millis();
+    rootCACheck(now);
+
+    delay(10);
+  }
 }
