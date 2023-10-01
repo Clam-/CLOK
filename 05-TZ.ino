@@ -25,14 +25,6 @@ void timeavailable(struct timeval *t)
   printLocalTime();
 }
 
-void tzVersionCheckCallback(const char* bodystr) {
-  // check contents of web version to stored version data.
-  if (!compareFileContents(bodystr, "/version")){
-    // queue update
-    queueGET(TZ_VERSION_URL, "/tz.tar", &tzFetchCallback)
-  }
-}
-
 bool TZ_DIR_REGION_OPEN = false;
 bool TZ_DIR_LIST_FINISH = false;
 File TZ_DIR = nullptr;
@@ -79,7 +71,13 @@ unsigned long TZ_NEXT_CHECK_TIME = 0;
 void processNewZoneFile(String &body, String &etag) {
   // unpack .tar
   unpackTZdata();
+  // read version string
+  File f = LittleFS.open("/version");
+  char *buffer = new char[6];
+  f.read(buffer, 6);
   preferences.putString("TZ-ETag", etag);
+  preferences.putString("TZ-Version", buffer);
+  delete []buffer;
 }
 void tzTick(unsigned long curtime) {
   if (curTime > TZ_NEXT_CHECK_TIME) {

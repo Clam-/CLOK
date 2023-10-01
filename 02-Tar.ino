@@ -1,17 +1,17 @@
+#define DEST_FS_USES_LITTLEFS
+TAR_Unpacker *tar;
 void tarSetup() {
-  
+  tarGzFS.begin();
+  TAR_Unpacker = new TAR_Unpacker();
 }
 
 void unpackTZdata() {
-  tarGzFS.begin();
-
-  TarUnpacker *tar = new TarUnpacker();
-  TARUnpacker->setTarVerify(true);                                                           // true = enables health checks but slows down the overall process
-  TARUnpacker->setupFSCallbacks(targzTotalBytesFn, targzFreeBytesFn);                        // prevent the partition from exploding, recommended
-  TARUnpacker->setLoggerCallback(BaseUnpacker::targzPrintLoggerCallback);                    // gz log verbosity
-  TARUnpacker->setTarProgressCallback(BaseUnpacker::defaultProgressCallback);                // prints the untarring progress for each individual file
-  TARUnpacker->setTarStatusProgressCallback(BaseUnpacker::defaultTarStatusProgressCallback); // print the filenames as they're expanded
-  TARUnpacker->setTarMessageCallback(BaseUnpacker::targzPrintLoggerCallback);                // tar log verbosity
+  TAR_Unpacker->setTarVerify(true);                                                           // true = enables health checks but slows down the overall process
+  TAR_Unpacker->setupFSCallbacks(targzTotalBytesFn, targzFreeBytesFn);                        // prevent the partition from exploding, recommended
+  TAR_Unpacker->setLoggerCallback(BaseUnpacker::targzPrintLoggerCallback);                    // gz log verbosity
+  TAR_Unpacker->setTarProgressCallback(BaseUnpacker::defaultProgressCallback);                // prints the untarring progress for each individual file
+  TAR_Unpacker->setTarStatusProgressCallback(BaseUnpacker::defaultTarStatusProgressCallback); // print the filenames as they're expanded
+  TAR_Unpacker->setTarMessageCallback(BaseUnpacker::targzPrintLoggerCallback);                // tar log verbosity
 
   Stream *streamptr = HTTP_CLIENT.getStreamPtr();
   if (streamptr != nullptr)
@@ -25,9 +25,9 @@ void unpackTZdata() {
       Serial.printf("Stream size %d\n", streamSize);
     }
 
-    if (!TARUnpacker->tarStreamExpander(streamptr, streamSize, tarGzFS, "/"))
+    if (!TAR_Unpacker->tarStreamExpander(streamptr, streamSize, tarGzFS, "/"))
     {
-      Serial.printf("tarStreamExpander failed with return code #%d\n", TARUnpacker->tarGzGetError());
+      Serial.printf("tarStreamExpander failed with return code #%d\n", TAR_Unpacker->tarGzGetError());
     }
     else
     {
@@ -40,8 +40,6 @@ void unpackTZdata() {
       }
 
       Serial.println("Done");
-      preferences.putString("tzver", )
     }
   }
-  
 }

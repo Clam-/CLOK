@@ -1,4 +1,3 @@
-#define DEST_FS_USES_LITTLEFS
 #include <Arduino.h>
 #include "FS.h"
 #include <LittleFS.h>
@@ -7,9 +6,6 @@
 Preferences preferences;
   
 #include <ArduinoBLE.h>
-
-#include <WiFi.h>
-#include <WiFiMulti.h>
 
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
@@ -24,7 +20,6 @@ void setup() {
   preferences.begin("clok", false);
   BLESetup();
   TZSetup();
-  WiFiSetup();
   webSetup();
   Serial.println("Startup complete.");
 }

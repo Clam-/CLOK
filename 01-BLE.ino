@@ -17,12 +17,15 @@ void BLESetup() {
 
 void BLE_ConnectionSetup() {
   TZ_BLE_Connected();
+  WiFi_BLE_Connected();
 }
 void BLE_ConnectionCleanUp() {
-
+  TZ_CleanUp();
+  WiFi_BLE_CleanUp();
 }
 void BLE_ConnectionTick() {
   TZ_BLE_Tick();
+  WiFi_BLE_Tick();
 }
 
 
