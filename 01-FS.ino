@@ -7,8 +7,16 @@ void FSSetup(){
   }
 }
 
+String FStail(File &f) {
+  String line;
+  while (f.available()) {
+    line = f.readStringUntil("\n");
+  }
+  return line;
+}
+
 // I'm using ETag I don't need this after all...
-bool compareFileContents(const char *s, const char * path){
+bool FScompareFileContents(const char *s, const char * path){
     Serial.printf("Reading file: %s\r\n", path);
     int len = strlen(s);
     char buf[len];

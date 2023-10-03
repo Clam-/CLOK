@@ -52,7 +52,7 @@ void BLETask() {
       // cleanup...
       BLE_ConnectionCleanUp();
       // when the central disconnects, print it out:
-      Serial.print(F("Disconnected from central: "));
+      Serial.print("Disconnected from central: ");
       Serial.println(central.address());
     }
     delay(100);

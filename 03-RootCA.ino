@@ -86,8 +86,9 @@ void processNewCA(String &body, String &etag) {
 
 void rootCACheck(unsigned long &now) {
   if (now - ROOTCA_PREV_TIME > TZ_CHECK_TIME) {
-    getURL(preferences.getString("ROOTCA-URL").c_str(), NULL, processNewCA, preferences.getString("ROOTCA-ETag"));
-    ROOTCA_PREV_TIME = now;
+    if (getURL(preferences.getString("ROOTCA-URL").c_str(), NULL, processNewCA, preferences.getString("ROOTCA-ETag"))) {
+      ROOTCA_PREV_TIME = now;
+    } 
   }
 }
 

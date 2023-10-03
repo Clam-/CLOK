@@ -41,7 +41,7 @@ void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
   ESP.restart();
 }
 
-// function to output SSIDs...
+// functions relating to output SSIDs...
 bool WIFI_DoScan = false;
 bool WIFI_ScanComplete = false;
 int WIFI_ScanResults = 0;
@@ -59,6 +59,7 @@ void WiFi_BLE_Tick() {
 void WiFi_BLE_CleanUp() {
   WiFi.scanDelete();
   BLE_WiFi_ssids.writeValue("");
+  WIFI_DoScan = false;
 }
 
 void WiFiRunScan() {
@@ -83,8 +84,8 @@ void WiFiTask() {
       if (WIFI_DoScan) {
         WiFi.disconnect();
       }
-      delay(100);
+      delay(10);
     }
-    delay(10);
+    delay(100);
   }
 }
