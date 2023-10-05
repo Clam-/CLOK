@@ -40,7 +40,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----\n";
 
 unsigned long ROOTCA_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
-unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
+unsigned long ROOTCA_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
 char* ROOTCA = NULL;
 size_t ROOTCA_LEN = 0;
 
@@ -85,7 +85,7 @@ void processNewCA(String &body, String &etag) {
 }
 
 void rootCACheck(unsigned long &now) {
-  if (now - ROOTCA_PREV_TIME > TZ_CHECK_TIME) {
+  if (now - ROOTCA_PREV_TIME > ROOTCA_CHECK_TIME) {
     if (getURL(preferences.getString("ROOTCA-URL").c_str(), NULL, processNewCA, preferences.getString("ROOTCA-ETag"))) {
       ROOTCA_PREV_TIME = now;
     } 

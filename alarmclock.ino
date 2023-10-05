@@ -11,3 +11,24 @@ BLECharCharacteristic brightness("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead
 
 // wonder how I should send this...
 BLEByteCharacteristic localdatetime("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify);
+
+time_t ALARM_NOW;
+struct tm ALARM_LOCAL_TIME;
+size_t ALARM_STR_SIZE = 25;
+
+void updateDisplay() {
+  Serial.print("Time: ");
+  char* timestr = new char[ALARM_STR_SIZE];
+  strftime(timestr, ALARM_STR_SIZE, "%Y%m%dT%H%M%SZ%z", ALARM_LOCAL_TIME);
+  Serial.println(timestr);
+}
+
+void alarmSetup() {
+
+}
+
+void alarmTick() {
+  time(&now);
+  localtime_r(&now, ALARM_LOCAL_TIME);
+  updateDisplay()
+}

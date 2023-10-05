@@ -17,7 +17,6 @@ void setup() {
   Serial.begin(9600);
   
   preferences.begin("clok", false);
-  BLESetup();
   
   Serial.println("Startup complete.");
 }
@@ -26,8 +25,8 @@ void setup() {
 // maybe have dedicated ClockTask after all so I can give it good priority (>19 or =16 [less than the IP stack])
 void loop() {
   // I guess clock related items are in the main loop task?
-  
-  delay(100);
+  alarmTick()
+  delay(1000);
 }
 
 void BackgroundTasks(void *pvParameters){

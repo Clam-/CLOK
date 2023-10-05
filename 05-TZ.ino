@@ -3,6 +3,9 @@
 char *TZ_ENV = malloc(100);
 
 const char* TZ_ZONEINFO_URL = "http://192.168.25.250:9999/zoneinfo.tar"
+unsigned long TZ_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
+unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
+
 BLEStringCharacteristic BLE_TZ_zoneinfoURL("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite);
 BLEStringCharacteristic BLE_TZ_timezone("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite);
 BLEStringCharacteristic BLE_TZ_regions("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | Notify);
@@ -99,10 +102,10 @@ void processNewZoneFile(String &body, String &etag) {
 }
 
 unsigned long TZ_NEXT_CHECK_TIME = 0;
-void tzTick(unsigned long curtime) {
-  if (curTime > TZ_NEXT_CHECK_TIME) {
+void tzTick(unsigned long &curtime) {
+  if (curTime - TZ_PREV_TIME > TZ_CHECK_TIME) {
     if (getURL(preferences.getString("TZ-URL").c_str(), NULL, processNewZoneFile, preferences.getString("TZ-ETag"))) {
-      TZ_NEXT_CHECK_TIME + 50400000; // (14*60*60*1000) 14 hour checks.
-    }
+      TZ_PREV_TIME = curTime;
+    } 
   }
 }

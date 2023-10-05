@@ -31,7 +31,8 @@ void BLE_ConnectionTick() {
 
 
 void BLETask() {
-  // stuff.
+  // setup.
+  BLESetup();
   for (;;){
     BLEDevice central = BLE.central();
 

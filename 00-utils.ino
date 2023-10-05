@@ -7,6 +7,7 @@ bool prefix(const char *pre, const char *str)
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
+// shinanigans: https://sourceware.org/legacy-ml/newlib/2018/msg00309.html
 void CLOKconfigTzTime(char* tz, const char* ntz, const char* server1, const char* server2)
 {
     //tcpip_adapter_init();  // Should not hurt anything if already inited
