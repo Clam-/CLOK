@@ -1,22 +1,23 @@
-#define DEST_FS_USES_LITTLEFS
-TAR_Unpacker *tar;
+
+TarUnpacker *TAR_P;
+
 void tarSetup() {
   tarGzFS.begin();
-  TAR_Unpacker = new TAR_Unpacker();
+  TAR_P = new TarUnpacker();
 }
 
-void unpackTZdata() {
-  TAR_Unpacker->setTarVerify(true);                                                           // true = enables health checks but slows down the overall process
-  TAR_Unpacker->setupFSCallbacks(targzTotalBytesFn, targzFreeBytesFn);                        // prevent the partition from exploding, recommended
-  TAR_Unpacker->setLoggerCallback(BaseUnpacker::targzPrintLoggerCallback);                    // gz log verbosity
-  TAR_Unpacker->setTarProgressCallback(BaseUnpacker::defaultProgressCallback);                // prints the untarring progress for each individual file
-  TAR_Unpacker->setTarStatusProgressCallback(BaseUnpacker::defaultTarStatusProgressCallback); // print the filenames as they're expanded
-  TAR_Unpacker->setTarMessageCallback(BaseUnpacker::targzPrintLoggerCallback);                // tar log verbosity
+void unpackTZdata(HTTPClient &hclient) {
+  TAR_P->setTarVerify(true);                                                           // true = enables health checks but slows down the overall process
+  TAR_P->setupFSCallbacks(targzTotalBytesFn, targzFreeBytesFn);                        // prevent the partition from exploding, recommended
+  TAR_P->setLoggerCallback(BaseUnpacker::targzPrintLoggerCallback);                    // gz log verbosity
+  TAR_P->setTarProgressCallback(BaseUnpacker::defaultProgressCallback);                // prints the untarring progress for each individual file
+  TAR_P->setTarStatusProgressCallback(BaseUnpacker::defaultTarStatusProgressCallback); // print the filenames as they're expanded
+  TAR_P->setTarMessageCallback(BaseUnpacker::targzPrintLoggerCallback);                // tar log verbosity
 
-  Stream *streamptr = HTTP_CLIENT.getStreamPtr();
+  Stream *streamptr = hclient.getStreamPtr();
   if (streamptr != nullptr)
   {
-    String contentLengthStr = HTTP_CLIENT.header("Content-Length");
+    String contentLengthStr = hclient.header("Content-Length");
     contentLengthStr.trim();
     int64_t streamSize = -1;
     if (contentLengthStr != "")
@@ -25,14 +26,14 @@ void unpackTZdata() {
       Serial.printf("Stream size %d\n", streamSize);
     }
 
-    if (!TAR_Unpacker->tarStreamExpander(streamptr, streamSize, tarGzFS, "/"))
+    if (!TAR_P->tarStreamExpander(streamptr, streamSize, tarGzFS, "/"))
     {
-      Serial.printf("tarStreamExpander failed with return code #%d\n", TAR_Unpacker->tarGzGetError());
+      Serial.printf("tarStreamExpander failed with return code #%d\n", TAR_P->tarGzGetError());
     }
     else
     {
       // print leftover bytes if any (probably zero-fill from the server)
-      while (HTTP_CLIENT.connected())
+      while (hclient.connected())
       {
         size_t streamSize = streamptr->available();
         if (streamSize) { Serial.printf("%02x ", streamptr->read()); }

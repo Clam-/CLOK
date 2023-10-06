@@ -16,19 +16,19 @@ time_t ALARM_NOW;
 struct tm ALARM_LOCAL_TIME;
 size_t ALARM_STR_SIZE = 25;
 
-void updateDisplay() {
+void clok_BLE_Setup() {
+
+}
+
+void clokUdateDisplay() {
   Serial.print("Time: ");
   char* timestr = new char[ALARM_STR_SIZE];
-  strftime(timestr, ALARM_STR_SIZE, "%Y%m%dT%H%M%SZ%z", ALARM_LOCAL_TIME);
+  strftime(timestr, ALARM_STR_SIZE, "%Y%m%dT%H%M%SZ%z", &ALARM_LOCAL_TIME);
   Serial.println(timestr);
 }
 
-void alarmSetup() {
-
-}
-
-void alarmTick() {
-  time(&now);
-  localtime_r(&now, ALARM_LOCAL_TIME);
-  updateDisplay()
+void clokTick() {
+  time(&ALARM_NOW);
+  localtime_r(&ALARM_NOW, &ALARM_LOCAL_TIME);
+  clokUdateDisplay();
 }

@@ -2,6 +2,13 @@
 BLEService clokService("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK"); // 
 // characteristics are defined in the modules that are responsible for them.
 
+void BLE_Modules_Setup() {
+  WiFi_BLE_Setup();
+  rootCA_BLE_Setup();
+  TZ_BLE_Setup();
+  clok_BLE_Setup();
+}
+
 void BLESetup() {
   if (!BLE.begin()) {
     Serial.println("starting Bluetooth® Low Energy module failed!");
@@ -10,7 +17,7 @@ void BLESetup() {
   }
   BLE.setLocalName("CLOK");
   BLE.setAdvertisedService(clokService);
-
+  BLE_Modules_Setup();
   BLE.addService(clokService);
   BLE.advertise();
 }

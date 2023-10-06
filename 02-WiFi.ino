@@ -1,41 +1,81 @@
-#include <WiFi.h>
-#include <WiFiMulti.h>
-
-BLEStringCharacteristic BLE_WiFi_ssids("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | Notify); // to send data on SSIDs
-BLEStringCharacteristic BLE_WiFi_ssid("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite); // to send data on SSIDs
-BLEStringCharacteristic BLE_WiFi_wpakey("BAAD0001-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite);
-
-
-BLE_WiFi_wpakey.setEventHandler(BLEWritten, WiFiwpakeywritten);
+BLEStringCharacteristic BLE_WiFi_ssids("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 256); // to send data on SSIDs
+BLEStringCharacteristic BLE_WiFi_ssid("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256); // to send data on SSIDs
+BLEStringCharacteristic BLE_WiFi_wpakey("BAAD0001-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256);
 
 WiFiMulti WIFI_Multi;
 bool WIFI_CONNECTED = false;
+const char* WIFI_SSID_PREFIX = "WIFI_SSID_";
+const char* WIFI_KEY_PREFIX = "WIFI_KEY_";
+
+void WiFi_BLE_Setup() {
+  clokService.addCharacteristic(BLE_WiFi_ssids);
+  clokService.addCharacteristic(BLE_WiFi_ssid);
+  clokService.addCharacteristic(BLE_WiFi_wpakey);
+  BLE_WiFi_wpakey.setEventHandler(BLEWritten, WiFiwpakeywritten);
+}
+int WIFI_AP_LIMIT = 10;
+int WiFicheckSSID(const char* ssid) {
+  String pre = String(WIFI_SSID_PREFIX);
+  for (int x=0;x<WIFI_AP_LIMIT;x++) {
+    String ssidcheck = pre+x;
+    if (preferences.isKey(ssidcheck.c_str())) { 
+      if (preferences.getString(ssidcheck.c_str()) == ssid){ return x; }
+    }
+  }
+  return -1;
+}
+int WiFigetUnusedSSIDSlot() {
+  String pre = String(WIFI_SSID_PREFIX);
+  for (int x=0;x<WIFI_AP_LIMIT;x++) {
+    String ssidcheck = pre+x;
+    if (!preferences.isKey(ssidcheck.c_str())) { return x; }
+  }
+  return -1;
+}
+void WiFiputSSID(const char* ssid, const char* key) {
+  // also put key
+  if (WiFicheckSSID(ssid) == -1) {
+    int slot = WiFigetUnusedSSIDSlot();
+    if (slot == -1) { Serial.println("SSIDs full."); return; }
+      String ssidslot = String(WIFI_SSID_PREFIX);
+      String keyslot = String(WIFI_KEY_PREFIX);
+      ssidslot += slot; keyslot += slot;
+      preferences.putString(ssidslot.c_str(), ssid);
+      preferences.putString(keyslot.c_str(), key);
+  }
+}
+void WiFiremoveSSID(const char* ssid) {
+  // also remove key
+  String pre = String(WIFI_SSID_PREFIX);
+  for (int x=0;x<WIFI_AP_LIMIT;x++) {
+    String ssidcheck = pre+x;
+    if (preferences.isKey(ssidcheck.c_str())) {
+      preferences.remove(ssidcheck.c_str());
+      String keyslot = String(WIFI_KEY_PREFIX)+x;
+      preferences.remove(keyslot.c_str());
+      return;
+    }
+  }
+}
 
 void WiFiSetup() {
-  // add stored APs. Iterate over all stored preferences for AP_ prefix ones...
-  nvs_iterator_t it = NULL;
-  esp_err_t res = nvs_entry_find(NULL, "CLOK", NVS_TYPE_STR, &it);
-  while(res == ESP_OK) {
-      nvs_entry_info_t info;
-      nvs_entry_info(it, &info); // Can omit error check if parameters are guaranteed to be non-NULL
-      if (prefix("AP_", info.key)) {
-        String wpakey = preferences.getString(info.key);
-        char *ssid = info.key;
-        ssid += 3;
-        Serial.printf("Adding AP: '%s' \n", ssid);
-        WIFI_Multi.addAP(ssid, wpakey);
-      }
-      res = nvs_entry_next(&it);
+  // add stored APs. Iterate over all stored preferences for WIFI_SSID_PREFIX prefix ones...
+  String pre = String(WIFI_SSID_PREFIX);
+  for (int x=0;x<WIFI_AP_LIMIT;x++) {
+    String ssidslot = pre+x;
+    if (preferences.isKey(ssidslot.c_str())) {
+      String ssid = preferences.getString(ssidslot.c_str());
+      String keyslot = String(WIFI_KEY_PREFIX)+x;
+      String wpakey = preferences.getString(keyslot.c_str());
+      WIFI_Multi.addAP(ssid.c_str(), wpakey.c_str());
+    }
   }
-  nvs_release_iterator(it);
   WiFi.mode(WIFI_STA);
   WIFI_Multi.run();
 }
 
 void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
-  // check if already in pref store...
-  String key = "AP_"+BLE_WiFi_ssid.value();
-  preferences.putString(key.c_str(), characteristic.value());
+  WiFiputSSID(BLE_WiFi_ssid.value().c_str(), BLE_WiFi_wpakey.value().c_str());
   // reboot...
   delay(3000);
   ESP.restart();
@@ -46,14 +86,17 @@ bool WIFI_DoScan = false;
 bool WIFI_ScanComplete = false;
 int WIFI_ScanResults = 0;
 int WIFI_ScanCurrent = 0;
+int WIFI_ScanCount = 0;
 void WiFi_BLE_Connected() {
   WIFI_DoScan = true;
+  WIFI_ScanCount = 0;
 }
 void WiFi_BLE_Tick() {
   if (WIFI_ScanComplete && WIFI_ScanCurrent < WIFI_ScanResults) {
-    BLE_WiFi_ssids.writeValue(String(WiFi.RSSI(i))+"|"+WiFi.SSID(WIFI_ScanCurrent));
+    BLE_WiFi_ssids.writeValue(String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent));
     WIFI_ScanCurrent++;
   }
+  WIFI_ScanComplete = false;
 }
 
 void WiFi_BLE_CleanUp() {
@@ -75,8 +118,10 @@ void WiFiTask() {
     // WiFi mainloop
     // If scanRequested, turn off Wifi and initiate scan...
     //
-    if (WIFI_DoScan) {
-      WiFiRunScan();
+    if (WIFI_DoScan && WIFI_ScanCount < 4) {
+      if (WIFI_ScanComplete == false) {
+        WiFiRunScan(); WIFI_ScanCount++;
+      }
     } else {
       WIFI_Multi.run();
     }
