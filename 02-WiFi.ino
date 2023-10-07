@@ -1,6 +1,6 @@
-BLEStringCharacteristic BLE_WiFi_ssids("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 256); // to send data on SSIDs
-BLEStringCharacteristic BLE_WiFi_ssid("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256); // to send data on SSIDs
-BLEStringCharacteristic BLE_WiFi_wpakey("BAAD0001-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256);
+BLEStringCharacteristic BLE_WiFi_ssids("BAAD0011-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 256); // to send data on SSIDs
+BLEStringCharacteristic BLE_WiFi_ssid("BAAD0012-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite, 256); // to get requested SSID
+BLEStringCharacteristic BLE_WiFi_wpakey("BAAD0013-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite, 256); // to get requested WPA KEY
 
 WiFiMulti WIFI_Multi;
 bool WIFI_CONNECTED = false;
@@ -83,20 +83,18 @@ void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
 
 // functions relating to output SSIDs...
 bool WIFI_DoScan = false;
-bool WIFI_ScanComplete = false;
+bool WIFI_ScanReady = false;
 int WIFI_ScanResults = 0;
 int WIFI_ScanCurrent = 0;
-int WIFI_ScanCount = 0;
 void WiFi_BLE_Connected() {
   WIFI_DoScan = true;
-  WIFI_ScanCount = 0;
 }
 void WiFi_BLE_Tick() {
-  if (WIFI_ScanComplete && WIFI_ScanCurrent < WIFI_ScanResults) {
+  if (WIFI_ScanReady && WIFI_ScanCurrent < WIFI_ScanResults) {
     BLE_WiFi_ssids.writeValue(String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent));
     WIFI_ScanCurrent++;
   }
-  WIFI_ScanComplete = false;
+  WIFI_ScanReady = false;
 }
 
 void WiFi_BLE_CleanUp() {
@@ -107,27 +105,30 @@ void WiFi_BLE_CleanUp() {
 
 void WiFiRunScan() {
   WIFI_ScanResults = WiFi.scanNetworks();
-  WIFI_ScanComplete = true;
+  WIFI_ScanReady = true;
   return;
 }
 
-void WiFiTask() {
+void WiFiTask(void *pvParameters) {
+  (void) pvParameters;
   // stuff.
   WiFiSetup();
   for (;;){
     // WiFi mainloop
     // If scanRequested, turn off Wifi and initiate scan...
-    //
-    if (WIFI_DoScan && WIFI_ScanCount < 4) {
-      if (WIFI_ScanComplete == false) {
-        WiFiRunScan(); WIFI_ScanCount++;
+    CONNECTED = false;
+    if (WIFI_DoScan) {
+      if (WIFI_ScanReady == false) {
+        WiFiRunScan();
       }
     } else {
       WIFI_Multi.run();
     }
     while (WiFi.status() == WL_CONNECTED) {
+      CONNECTED = true;
       if (WIFI_DoScan) {
         WiFi.disconnect();
+        CONNECTED = false;
       }
       delay(10);
     }

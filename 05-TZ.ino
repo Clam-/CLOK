@@ -5,13 +5,13 @@ const char* TZ_ZONEINFO_URL = "http://192.168.25.250:9999/zoneinfo.tar";
 unsigned long TZ_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
 unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
 
-BLEStringCharacteristic BLE_TZ_zoneinfoURL("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 512);
-BLEStringCharacteristic BLE_TZ_timezone("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 300);
-BLEStringCharacteristic BLE_TZ_regions("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
-BLEStringCharacteristic BLE_TZ_region("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite | BLERead, 100);
-BLEStringCharacteristic BLE_TZ_timezones("BAAD0004-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
-BLEStringCharacteristic BLE_TZ_ntp1("BAAD0002-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100); 
-BLEStringCharacteristic BLE_TZ_ntp2("BAAD0003-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100);
+BLEStringCharacteristic BLE_TZ_zoneinfoURL("BAAD0051-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 512);
+BLEStringCharacteristic BLE_TZ_timezone("BAAD0052-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 300);
+BLEStringCharacteristic BLE_TZ_regions("BAAD0053-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
+BLEStringCharacteristic BLE_TZ_region("BAAD0054-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite | BLERead, 100);
+BLEStringCharacteristic BLE_TZ_timezones("BAAD0055-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
+BLEStringCharacteristic BLE_TZ_ntp1("BAAD0056-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100); 
+BLEStringCharacteristic BLE_TZ_ntp2("BAAD0057-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100);
 const char *TZ_default = "";
 
 void TZ_BLE_Setup() {
@@ -109,7 +109,7 @@ void processNewZoneFile(String &body, String &etag) {
   delete []buffer;
 }
 
-void tzTick(unsigned long &curtime) {
+void tzCheck(unsigned long &curtime) {
   if (curtime - TZ_PREV_TIME > TZ_CHECK_TIME) {
     String tzurl = preferences.getString("TZ-URL");
     String etag = preferences.getString("TZ-ETag");

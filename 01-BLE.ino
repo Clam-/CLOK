@@ -37,7 +37,8 @@ void BLE_ConnectionTick() {
 
 
 
-void BLETask() {
+void BLETask(void *pvParameters) {
+  (void) pvParameters;
   // setup.
   BLESetup();
   for (;;){

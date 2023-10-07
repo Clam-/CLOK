@@ -2,7 +2,7 @@
 // create some update method... to update once a year... (or two?)
 
 // BLE options
-BLEStringCharacteristic BLE_RootCA_URL("BAAD0007-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256);
+BLEStringCharacteristic BLE_RootCA_URL("BAAD0031-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256);
 
 const char* RootCA_URL_default = "https://letsencrypt.org/certs/isrgrootx1.pem";
 const char* RootCA_default = \
@@ -62,15 +62,16 @@ void rootCAsetup() {
   loadRootCA();
 }
 
-const char* loadRootCA() {
+void loadRootCA() {
   size_t size = preferences.getUInt("ROOTCA-len", 0);
+  Serial.print("SIZE: "); Serial.println(size);
   if (size > ROOTCA_LEN) {
     if (ROOTCA != NULL) { delete[] ROOTCA; }
     ROOTCA_LEN = size;
     char* buffer = new char[ROOTCA_LEN];
     ROOTCA = buffer;
   }
-  preferences.getString("ROOTCA", ROOTCA, size);
+  preferences.getString("ROOTCA", ROOTCA, size); //
 }
 
 void setRootCA(const char* cert, const char* ETag) {

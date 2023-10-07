@@ -20,6 +20,13 @@
 // TZ
 #include "esp_sntp.h"
 
+// FreeRTOS
+#if CONFIG_FREERTOS_UNICORE
+#define ARDUINO_RUNNING_CORE 0
+#else
+#define ARDUINO_RUNNING_CORE 1
+#endif
+
 //Preferences
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -30,14 +37,19 @@ Preferences preferences;
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
 void BackgroundTasks(void *pvParameters);  //webfetch, update, etc...
-
+bool CONNECTED = false;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  
+  Serial.begin(115200);
   preferences.begin("clok", false);
-  
+  // start background tasks:
+  Serial.println("Creading WiFiTask...");
+  xTaskCreate(WiFiTask, "WiFiTask",  4096, NULL, 17, NULL);
+  Serial.println("Creading BLETask...");
+  xTaskCreate(BLETask, "BLETask", 4096, NULL, 17, NULL);
+  Serial.println("Creading BackgroundTasks...");
+  xTaskCreate(BackgroundTasks, "BackgroundTasks",  8192, NULL, 17, NULL);
   Serial.println("Startup complete.");
 }
 
@@ -50,7 +62,8 @@ void loop() {
 }
 
 void BackgroundTasks(void *pvParameters){
-  // backgrou setup
+  (void) pvParameters;
+  // background setup
   webSetup();
   FSSetup();
   tarSetup();
@@ -58,7 +71,7 @@ void BackgroundTasks(void *pvParameters){
   for (;;){
     unsigned long now = millis();
     rootCACheck(now);
-
-    delay(100);
+    tzCheck(now);
+    delay(1000);
   }
 }

@@ -19,16 +19,15 @@ HTTPClient& webGetClient() {
 
 
 bool getURL(const char* url, const char* writefile, void (*func)(String&, String&), String &eTag) {
-  if (ROOTCA == NULL || url == NULL) { return false; }
+  if (!CONNECTED || ROOTCA == NULL || url == NULL) { return false; }
   
   bool returnstatus = false;
   if (eTag != NULL && eTag != "") { HTTP_Client.addHeader("If-None-Match", eTag); HTTP_Client.addHeader("ETag", eTag); }
   else { HTTP_Client.addHeader("ETag", ""); }
   HTTP_Client.addHeader("Content-Length", "");
 
-  Serial.print("[HTTP] begin...\n");
   if (HTTP_Client.begin(*WEB_CLIENT, url)) {  // HTTP
-    Serial.print("[HTTP] GET...\n");
+    Serial.print("[HTTP] GET: \n"); Serial.println(url);
     // start connection and send HTTP header
     int httpCode = HTTP_Client.GET();
     // httpCode will be negative on error
