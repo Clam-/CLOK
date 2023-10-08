@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 
 import '../settings/settings_view.dart';
+import '../util.dart';
 import 'device_detail.dart';
 
 import 'package:quick_blue/quick_blue.dart';
@@ -26,7 +28,10 @@ class _DeviceListView extends State<DeviceListView> {
     super.initState();
     _subscription = QuickBlue.scanResultStream.listen((result) {
       if (!_scanResults.any((r) => r.deviceId == result.deviceId)) {
-        setState(() => _scanResults.add(result));
+        setState(() {
+          _scanResults.add(result);
+          _scanResults.sort((a,b) => b.rssi.compareTo(a.rssi));
+        });
       }
     });
   }
@@ -75,12 +80,11 @@ class _DeviceListView extends State<DeviceListView> {
         itemBuilder: (BuildContext context, int index) => ListTile(
           title:
               Text('${_scanResults[index].name}(${_scanResults[index].rssi})'),
-          subtitle: Text(_scanResults[index].deviceId),
+          subtitle: Text('${stringToIntToMAC(_scanResults[index].deviceId)} (${_scanResults[index].deviceId})'),
           leading: SignalStrengthIndicator.bars(
-            value: 0.6,
-            size: 50,
-            barCount: 4,
-            spacing: 0.2,
+            value: _scanResults[index].rssi,
+            minValue: -120, maxValue: -10,
+            size: 50, barCount: 4, spacing: 0.2,
           ),
           onTap: () {
             // Navigate to the details page. If the user leaves and returns to

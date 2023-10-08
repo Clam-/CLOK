@@ -37,19 +37,20 @@ Preferences preferences;
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
 void BackgroundTasks(void *pvParameters);  //webfetch, update, etc...
-bool CONNECTED = false;
+bool WIFI_CONNECTED = false;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   preferences.begin("clok", false);
   // start background tasks:
-  Serial.println("Creading WiFiTask...");
+  Serial.println("Creating WiFiTask...");
   xTaskCreate(WiFiTask, "WiFiTask",  4096, NULL, 17, NULL);
-  Serial.println("Creading BLETask...");
+  Serial.println("Creating BLETask...");
   xTaskCreate(BLETask, "BLETask", 4096, NULL, 17, NULL);
-  Serial.println("Creading BackgroundTasks...");
+  Serial.println("Creating BackgroundTasks...");
   xTaskCreate(BackgroundTasks, "BackgroundTasks",  8192, NULL, 17, NULL);
+  clokSetup();
   Serial.println("Startup complete.");
 }
 
@@ -72,6 +73,6 @@ void BackgroundTasks(void *pvParameters){
     unsigned long now = millis();
     rootCACheck(now);
     tzCheck(now);
-    delay(1000);
+    delay(5000);
   }
 }
