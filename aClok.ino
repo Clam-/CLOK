@@ -14,6 +14,11 @@ BLEByteCharacteristic localdatetime("BAAD0075-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLER
 time_t ALARM_NOW;
 struct tm ALARM_LOCAL_TIME;
 size_t ALARM_STR_SIZE = 25;
+char* CLOK_TIME_STR;
+
+void clokSetup() {
+  CLOK_TIME_STR = new char[ALARM_STR_SIZE];
+}
 
 void clok_BLE_Setup() {
 
@@ -21,9 +26,9 @@ void clok_BLE_Setup() {
 
 void clokUdateDisplay() {
   Serial.print("Time: ");
-  char* timestr = new char[ALARM_STR_SIZE];
-  strftime(timestr, ALARM_STR_SIZE, "%Y%m%dT%H%M%SZ%z", &ALARM_LOCAL_TIME);
-  Serial.println(timestr);
+  
+  strftime(CLOK_TIME_STR, ALARM_STR_SIZE, "%Y%m%dT%H%M%SZ%z", &ALARM_LOCAL_TIME);
+  Serial.println(CLOK_TIME_STR);
 }
 
 void clokTick() {

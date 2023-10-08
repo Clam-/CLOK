@@ -16,6 +16,7 @@ void BLESetup() {
     ESP.restart();
   }
   BLE.setLocalName("CLOK");
+  BLE.setDeviceName("CLOK");
   BLE.setAdvertisedService(clokService);
   BLE_Modules_Setup();
   BLE.addService(clokService);

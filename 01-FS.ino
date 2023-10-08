@@ -1,5 +1,6 @@
 
 void FSSetup(){
+  // apparently don't need this because console prints out that it's already mounted (????)
   if(!LittleFS.begin(true)){
     Serial.println("LittleFS Mount Failed");
     ESP.deepSleep(9999999999);

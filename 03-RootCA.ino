@@ -79,7 +79,7 @@ void setRootCA(const char* cert, const char* ETag) {
   if (ROOTCA != NULL) { delete[] ROOTCA; }
   size_t size = preferences.putString("ROOTCA-ETag", ETag);
   //preferences.putUInt("ROOTCA-ETag-len", size);
-  size = preferences.putString("ROOTCA", cert);
+  size = preferences.putString("ROOTCA", cert)+1;
   preferences.putUInt("ROOTCA-len", size);
   loadRootCA();
 }

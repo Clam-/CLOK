@@ -19,7 +19,7 @@ HTTPClient& webGetClient() {
 
 
 bool getURL(const char* url, const char* writefile, void (*func)(String&, String&), String &eTag) {
-  if (!CONNECTED || ROOTCA == NULL || url == NULL) { return false; }
+  if (!WIFI_CONNECTED || ROOTCA == NULL || url == NULL) { return false; }
   
   bool returnstatus = false;
   if (eTag != NULL && eTag != "") { HTTP_Client.addHeader("If-None-Match", eTag); HTTP_Client.addHeader("ETag", eTag); }
