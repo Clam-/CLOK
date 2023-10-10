@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'dart:collection';
+import 'dart:async' show StreamSubscription;
 
 import 'package:flutter/material.dart';
 
@@ -51,7 +50,7 @@ class _DeviceListView extends State<DeviceListView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CLOK Config'),
+        title: const Text('CLOK - Select device'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -75,7 +74,7 @@ class _DeviceListView extends State<DeviceListView> {
         // Providing a restorationId allows the ListView to restore the
         // scroll position when a user leaves and returns to the app after it
         // has been killed while running in the background.
-        restorationId: 'menuListView',
+        restorationId: 'deviceListView',
         itemCount: _scanResults.length,
         itemBuilder: (BuildContext context, int index) => ListTile(
           title:
@@ -90,10 +89,7 @@ class _DeviceListView extends State<DeviceListView> {
             // Navigate to the details page. If the user leaves and returns to
             // the app after it has been killed while running in the
             // background, the navigation stack is restored.
-            Navigator.restorablePushNamed(
-              context,
-              DeviceDetailsView.routeName,
-            );
+            Navigator.restorablePushNamed(context, DeviceDetailsView.routeName, arguments: _scanResults[index].deviceId);
         }),
       ),
       floatingActionButton: FutureBuilder(
@@ -103,7 +99,7 @@ class _DeviceListView extends State<DeviceListView> {
           bool ready = (snapshot.data ?? false);
           return FloatingActionButton(
             onPressed: ready ? _toggleScan : null ,
-            tooltip: ready ? _scanning ? 'Stop Scan' : 'Start Scan' : 'Bluetooth not ready',
+            tooltip: ready ? _scanning ? 'Stop Scan' : 'Start Scan' : 'Bluetooth not available. Restart App.',
             child: ready ? _scanning ? const Icon(Icons.sensors_off): const Icon(Icons.sensors) : const Icon(Icons.bluetooth_disabled),
             );
           }

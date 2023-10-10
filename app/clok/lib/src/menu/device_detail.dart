@@ -8,8 +8,9 @@ import 'simple_control.dart';
 
 /// Displays detailed information about a SampleItem.
 class DeviceDetailsView extends StatefulWidget {
-  const DeviceDetailsView({super.key});
+  const DeviceDetailsView({super.key, required this.deviceID});
   static const routeName = '/device';
+  final String deviceID;
 
 @override
   State<DeviceDetailsView> createState() => _DeviceDetailsView();
@@ -76,9 +77,10 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
 
   @override
   Widget build(BuildContext context) {
+    var itemkeys = items.keys.toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CLOK Config'),
+        title: const Text('CLOK - Settings'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -98,29 +100,26 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
       // In contrast to the default ListView constructor, which requires
       // building all Widgets up front, the ListView.builder constructor lazily
       // builds Widgets as they’re scrolled into view.
-      body: ListView.builder(
-        // Providing a restorationId allows the ListView to restore the
-        // scroll position when a user leaves and returns to the app after it
-        // has been killed while running in the background.
-        restorationId: 'menuListView',
-        itemCount: items.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-              title: const Text('SampleItem'),
-              leading: const CircleAvatar(
-                // Display the Flutter Logo image asset.
-                foregroundImage: AssetImage('assets/images/flutter_logo.png'),
-              ),
-              onTap: () {
-                // Navigate to the details page. If the user leaves and returns to
-                // the app after it has been killed while running in the
-                // background, the navigation stack is restored.
-                Navigator.restorablePushNamed(
-                  context,
-                  DeviceDetailsView.routeName,
-                );
-              });
-        },
+      body:
+      Column(
+        children: <Widget>[
+          Text("Device: ${widget.deviceID}"),
+          Expanded(
+            child: ListView.builder(
+              // Providing a restorationId allows the ListView to restore the
+              // scroll position when a user leaves and returns to the app after it
+              // has been killed while running in the background.
+              restorationId: 'menuListView',
+              itemCount: items.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                    title: Text(items[itemkeys[index]]!.optionName),
+                    onTap: items[itemkeys[index]]!.onTapGen(context)
+                  );
+              },
+            ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _BLEConnected ? _toggleScan : null ,
