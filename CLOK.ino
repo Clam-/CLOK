@@ -47,7 +47,8 @@ void setup() {
   Serial.println("Creating WiFiTask...");
   xTaskCreate(WiFiTask, "WiFiTask",  4096, NULL, 17, NULL);
   Serial.println("Creating BLETask...");
-  xTaskCreate(BLETask, "BLETask", 4096, NULL, 17, NULL);
+  // Needs to be pinned to Core 1, else possible boot loop crash.
+  xTaskCreatePinnedToCore(BLETask, "BLETask", 4096, NULL, 17, NULL, 1);
   Serial.println("Creating BackgroundTasks...");
   xTaskCreate(BackgroundTasks, "BackgroundTasks",  8192, NULL, 17, NULL);
   clokSetup();

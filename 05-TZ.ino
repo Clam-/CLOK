@@ -2,8 +2,9 @@
 char *TZ_ENV = (char*)malloc(sizeof(char)*100);
 
 const char* TZ_ZONEINFO_URL = "http://192.168.25.250:9999/zoneinfo.tar";
-unsigned long TZ_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
 unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
+// The following offset means it'll first attempt to check 2mins post boot. (or until NTP syncs current time...)
+unsigned long TZ_PREV_TIME = -TZ_CHECK_TIME + (60*1000*2); 
 
 BLEStringCharacteristic BLE_TZ_zoneinfoURL("BAAD0051-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 512);
 BLEStringCharacteristic BLE_TZ_timezone("BAAD0052-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 300);
@@ -110,6 +111,7 @@ void processNewZoneFile(String &body, String &etag) {
 }
 
 void tzCheck(unsigned long &curtime) {
+  Serial.print("Curtime: "); Serial.println(curtime);
   if (curtime - TZ_PREV_TIME > TZ_CHECK_TIME) {
     String tzurl = preferences.getString("TZ-URL");
     String etag = preferences.getString("TZ-ETag");
