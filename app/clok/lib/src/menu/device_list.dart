@@ -1,12 +1,12 @@
 import 'dart:async' show StreamSubscription;
 
 import 'package:flutter/material.dart';
+import 'package:quick_blue/quick_blue.dart';
 
 import '../settings/settings_view.dart';
 import '../util.dart';
 import 'device_detail.dart';
 
-import 'package:quick_blue/quick_blue.dart';
 import 'package:signal_strength_indicator/signal_strength_indicator.dart';
 
 /// Displays a list of SampleItems.
@@ -20,6 +20,7 @@ class DeviceListView extends StatefulWidget {
 
 class _DeviceListView extends State<DeviceListView> {
   StreamSubscription<BlueScanResult>? _subscription;
+  bool _scanning = false;
 
   final _scanResults = <BlueScanResult>[];
   @override
@@ -27,10 +28,8 @@ class _DeviceListView extends State<DeviceListView> {
     super.initState();
     _subscription = QuickBlue.scanResultStream.listen((result) {
       if (!_scanResults.any((r) => r.deviceId == result.deviceId)) {
-        setState(() {
-          _scanResults.add(result);
-          _scanResults.sort((a,b) => b.rssi.compareTo(a.rssi));
-        });
+        _scanResults.add(result);
+        setState(() { _scanResults.sort((a,b) => b.rssi.compareTo(a.rssi)); });
       }
     });
   }
@@ -40,12 +39,12 @@ class _DeviceListView extends State<DeviceListView> {
     _subscription?.cancel();
   }
 
-  bool _scanning = false;
   void _toggleScan() {
     if (_scanning) { QuickBlue.stopScan(); }
     else { QuickBlue.startScan(); }
     setState(() => _scanning = !_scanning);
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,10 +85,9 @@ class _DeviceListView extends State<DeviceListView> {
             size: 50, barCount: 4, spacing: 0.2,
           ),
           onTap: () {
-            // Navigate to the details page. If the user leaves and returns to
-            // the app after it has been killed while running in the
-            // background, the navigation stack is restored.
-            Navigator.restorablePushNamed(context, DeviceDetailsView.routeName, arguments: _scanResults[index].deviceId);
+            // stop scan if scanning
+            if (_scanning) { _toggleScan(); }
+            Navigator.pushNamed(context, DeviceDetailsView.routeName, arguments: _scanResults[index].deviceId);
         }),
       ),
       floatingActionButton: FutureBuilder(
@@ -100,11 +98,10 @@ class _DeviceListView extends State<DeviceListView> {
           return FloatingActionButton(
             onPressed: ready ? _toggleScan : null ,
             tooltip: ready ? _scanning ? 'Stop Scan' : 'Start Scan' : 'Bluetooth not available. Restart App.',
-            child: ready ? _scanning ? const Icon(Icons.sensors_off): const Icon(Icons.sensors) : const Icon(Icons.bluetooth_disabled),
+            child: ready ? _scanning ? const Icon(Icons.search_off): const Icon(Icons.search) : const Icon(Icons.bluetooth_disabled),
             );
           }
       )
-        
     );
   }
 }

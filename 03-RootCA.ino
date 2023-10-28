@@ -2,7 +2,7 @@
 // create some update method... to update once a year... (or two?)
 
 // BLE options
-BLEStringCharacteristic BLE_RootCA_URL("BAAD0031-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 256);
+BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256, true);
 
 const char* RootCA_URL_default = "https://letsencrypt.org/certs/isrgrootx1.pem";
 const char* RootCA_default = \
@@ -46,6 +46,8 @@ size_t ROOTCA_LEN = 0;
 void rootCA_BLE_Setup() {
   // BLE setup
   clokService.addCharacteristic(BLE_RootCA_URL);
+  // init string value
+  BLE_RootCA_URL.writeValue("");
   BLE_RootCA_URL.setEventHandler(BLEWritten, rootCAURLwritten);
 }
 
@@ -99,5 +101,5 @@ void rootCACheck(unsigned long &now) {
 }
 
 void rootCAURLwritten(BLEDevice central, BLECharacteristic characteristic) {
-  preferences.putString("ROOTCA-URL", BLE_RootCA_URL.value());
+  preferences.putString("ROOTCA-URL", (char*)BLE_RootCA_URL.value());
 }

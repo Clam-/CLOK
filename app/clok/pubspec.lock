@@ -188,42 +188,42 @@ packages:
     dependency: "direct main"
     description:
       name: quick_blue
-      sha256: "803e31a35138a4b5cd46950b8cde8c9b2eff4dd3199fc6fea4967ebe963a28f9"
+      sha256: f7a3c0e35494b54b39bd7bf342695eb093f80d1cdfbc81a9a50e973257821e4d
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.1+1"
+    version: "0.5.0-dev.2"
   quick_blue_linux:
     dependency: transitive
     description:
       name: quick_blue_linux
-      sha256: ee8cac0e20bc10c9a3d32886387bdda6e6b38c95017c2218ef6a2f27e7b43923
+      sha256: c9087b1c953453a595b28d875d67e97a49062961d66d9887ed848e58b972a70b
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.2"
+    version: "0.2.0-dev.0"
   quick_blue_macos:
     dependency: transitive
     description:
       name: quick_blue_macos
-      sha256: b4420c9f2517f6c6cb7df075a5c06c2872206ce915699694b69df46420ff494c
+      sha256: f6042ab21766839bd4d4acdd2407ab6898fba4523ad7f5b5ef8562024301297e
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1+2"
+    version: "0.4.0-dev.0"
   quick_blue_platform_interface:
     dependency: transitive
     description:
       name: quick_blue_platform_interface
-      sha256: cd38f60936c5e05401d228c55c9d2f67355207d18850bd829fd61c7e75ef860e
+      sha256: b2064c901791f0670cc15311995eafd87bad2316fe8755b82c4fed736c80155c
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2"
+    version: "0.4.0-dev.0"
   quick_blue_windows:
     dependency: transitive
     description:
       name: quick_blue_windows
-      sha256: "00db88117cccb35175597c767785d4a0c93e42bf12df1a809735f160c9ec3686"
+      sha256: f13386099bd189664720bc3d3320793201121638cb158c328f0b15af87fabdb7
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2+2"
+    version: "0.4.0-dev.0"
   signal_strength_indicator:
     dependency: "direct main"
     description:

@@ -1,5 +1,5 @@
 
-BLEService clokService("BAAD0000-5AAD-BAAD-FFFF-5AD5ADBADCLK"); // 
+BLEService clokService("00000000-5AAD-BAAD-FFFF-5AD5ADBADC1C"); // 
 // characteristics are defined in the modules that are responsible for them.
 
 void BLE_Modules_Setup() {
@@ -57,7 +57,7 @@ void BLETask(void *pvParameters) {
         // if the remote device wrote to the characteristic,
         // tick BLE related functions
         BLE_ConnectionTick();
-        delay(100);
+        delay(500);
       }
       // cleanup...
       BLE_ConnectionCleanUp();

@@ -1,7 +1,7 @@
-BLEStringCharacteristic BLE_WiFi_ssids("BAAD0011-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 256); // to send data on SSIDs
-BLEStringCharacteristic BLE_WiFi_ssid("BAAD0012-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite, 256); // to get requested SSID
-BLEStringCharacteristic BLE_WiFi_wpakey("BAAD0013-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite, 256); // to get requested WPA KEY
-BLEBoolCharacteristic BLE_WiFi_doscan("BAAD0014-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite | BLENotify); // to get requested WPA KEY
+BLECharacteristic BLE_WiFi_ssids("00000011-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 40); // to send data on SSIDs
+BLECharacteristic BLE_WiFi_ssid("00000012-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLEWrite, 40); // to get requested SSID
+BLECharacteristic BLE_WiFi_wpakey("00000013-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLEWrite, 65); // to get requested WPA KEY
+BLEBoolCharacteristic BLE_WiFi_doscan("00000014-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify); 
 
 WiFiMulti WIFI_Multi;
 const char* WIFI_SSID_PREFIX = "WIFI_SSID_";
@@ -12,6 +12,10 @@ void WiFi_BLE_Setup() {
   clokService.addCharacteristic(BLE_WiFi_ssid);
   clokService.addCharacteristic(BLE_WiFi_wpakey);
   clokService.addCharacteristic(BLE_WiFi_doscan);
+  // init String values
+  BLE_WiFi_ssids.writeValue("_");
+  BLE_WiFi_ssid.writeValue("_");
+  BLE_WiFi_wpakey.writeValue("_");
   BLE_WiFi_wpakey.setEventHandler(BLEWritten, WiFiwpakeywritten);
   BLE_WiFi_doscan.setEventHandler(BLEWritten, WiFidoscanwritten);
 }
@@ -77,7 +81,7 @@ void WiFiSetup() {
 }
 
 void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
-  WiFiputSSID(BLE_WiFi_ssid.value().c_str(), BLE_WiFi_wpakey.value().c_str());
+  WiFiputSSID((char*)BLE_WiFi_ssid.value(), (char*)BLE_WiFi_wpakey.value());
   // reboot...
   delay(3000);
   ESP.restart();
@@ -93,6 +97,8 @@ void WiFi_BLE_Connected() {
 }
 
 void WiFidoscanwritten(BLEDevice central, BLECharacteristic characteristic) {
+  Serial.print("Recv doscan: ");
+  Serial.println(BLE_WiFi_doscan.value());
   if (BLE_WiFi_doscan.value()) {
     WIFI_DoScan = true;
   } else {
@@ -100,11 +106,17 @@ void WiFidoscanwritten(BLEDevice central, BLECharacteristic characteristic) {
   }
 }
 void WiFi_BLE_Tick() {
-  if (WIFI_ScanReady && WIFI_ScanCurrent < WIFI_ScanResults) {
-    BLE_WiFi_ssids.writeValue(String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent));
-    WIFI_ScanCurrent++;
+  Serial.print(WIFI_ScanReady);Serial.print("Scan Current: "); Serial.print(WIFI_ScanCurrent); Serial.print("/"); Serial.println(WIFI_ScanResults);  
+  if (WIFI_ScanReady) {
+      if (WIFI_ScanCurrent < WIFI_ScanResults) {
+      String tstr = String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent);
+      Serial.print("Writing SSID: "); Serial.println(tstr);
+      BLE_WiFi_ssids.writeValue(tstr.c_str());
+      WIFI_ScanCurrent++;
+    } else {
+      WIFI_ScanReady = false;
+    }
   }
-  WIFI_ScanReady = false;
 }
 
 void WiFi_BLE_CleanUp() {
@@ -113,7 +125,8 @@ void WiFi_BLE_CleanUp() {
 
 void WiFiRunScan() {
   WIFI_ScanResults = WiFi.scanNetworks();
-  WIFI_ScanReady = true;
+  WIFI_ScanCurrent = 0;
+  WIFI_ScanReady = true; 
   return;
 }
 
@@ -125,6 +138,7 @@ void WiFiTask(void *pvParameters) {
     // WiFi mainloop
     // If scanRequested, turn off Wifi and initiate scan...
     WIFI_CONNECTED = false;
+    Serial.print("DoScan: "); Serial.println(WIFI_DoScan);
     if (WIFI_DoScan) {
       if (WIFI_ScanReady == false) {
         WiFi.scanDelete();

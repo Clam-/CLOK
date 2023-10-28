@@ -60,7 +60,7 @@ void setup() {
 void loop() {
   // I guess clock related items are in the main loop task?
   clokTick();
-  delay(1000);
+  delay(5000);
 }
 
 void BackgroundTasks(void *pvParameters){

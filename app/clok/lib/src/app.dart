@@ -71,7 +71,7 @@ class MyApp extends StatelessWidget {
                     return SettingsView(controller: settingsController);
                   case DeviceDetailsView.routeName:
                     final args = routeSettings.arguments! as String;
-                    return DeviceDetailsView(deviceID: args,);
+                    return DeviceDetailsView(deviceId: args);
                   case DeviceListView.routeName:
                   default:
                     return const DeviceListView();

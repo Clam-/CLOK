@@ -6,13 +6,13 @@ unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
 // The following offset means it'll first attempt to check 2mins post boot. (or until NTP syncs current time...)
 unsigned long TZ_PREV_TIME = -TZ_CHECK_TIME + (60*1000*2); 
 
-BLEStringCharacteristic BLE_TZ_zoneinfoURL("BAAD0051-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 512);
-BLEStringCharacteristic BLE_TZ_timezone("BAAD0052-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 300);
-BLEStringCharacteristic BLE_TZ_regions("BAAD0053-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
-BLEStringCharacteristic BLE_TZ_region("BAAD0054-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLEWrite | BLERead, 100);
-BLEStringCharacteristic BLE_TZ_timezones("BAAD0055-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLENotify, 100);
-BLEStringCharacteristic BLE_TZ_ntp1("BAAD0056-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100); 
-BLEStringCharacteristic BLE_TZ_ntp2("BAAD0057-5AAD-BAAD-FFFF-5AD5ADBADCLK", BLERead | BLEWrite, 100);
+BLECharacteristic BLE_TZ_zoneinfoURL("00000051-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256, true);
+BLECharacteristic BLE_TZ_timezone("00000052-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256, true);
+BLECharacteristic BLE_TZ_regions("00000053-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100, true);
+BLECharacteristic BLE_TZ_region("00000054-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLEWrite | BLERead, 100, true);
+BLECharacteristic BLE_TZ_timezones("00000055-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100, true);
+BLECharacteristic BLE_TZ_ntp1("00000056-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 100, true); 
+BLECharacteristic BLE_TZ_ntp2("00000057-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 100, true);
 const char *TZ_default = "";
 
 void TZ_BLE_Setup() {
@@ -23,6 +23,15 @@ void TZ_BLE_Setup() {
   clokService.addCharacteristic(BLE_TZ_timezones);
   clokService.addCharacteristic(BLE_TZ_ntp1);
   clokService.addCharacteristic(BLE_TZ_ntp2);
+  // init string values...
+  BLE_TZ_zoneinfoURL.writeValue("");
+  BLE_TZ_timezone.writeValue("");
+  BLE_TZ_regions.writeValue("");
+  BLE_TZ_region.writeValue("");
+  BLE_TZ_timezones.writeValue("");
+  BLE_TZ_ntp1.writeValue("");
+  BLE_TZ_ntp2.writeValue("");
+
   BLE_TZ_region.setEventHandler(BLEWritten, BLE_TZ_regionwritten);
   BLE_TZ_timezone.setEventHandler(BLEWritten, BLE_TZ_timezonewritten);
 }
@@ -49,7 +58,7 @@ File TZ_DIR = File();
 // region set, open region dir and start iterating
 void BLE_TZ_regionwritten(BLEDevice central, BLECharacteristic characteristic) {
   if (!TZ_DIR.available()) { Serial.println("TZ_Cleanup"); TZ_CleanUp(); }
-  String s = String("/zoneinfo/") + BLE_TZ_region.value();
+  String s = String("/zoneinfo/") + (char*)BLE_TZ_region.value();
   TZ_DIR = LittleFS.open(s.c_str());
   TZ_DIR_REGION_OPEN = true;
   TZ_DIR_LIST_FINISH = false;
@@ -87,7 +96,7 @@ void TZ_BLE_Connected() {
 
 void BLE_TZ_timezonewritten(BLEDevice central, BLECharacteristic characteristic) {
   // now read timezone, load timezone file and use last line as TZ env
-  String tz = BLE_TZ_timezone.value();
+  String tz = String((char*)BLE_TZ_timezone.value());
   preferences.putString("TZ-TimeZone", tz);
   if (tz != "") {
     fs::File f = LittleFS.open(tz);

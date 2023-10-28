@@ -1,11 +1,27 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:quick_blue/quick_blue.dart';
+
+import '../consts.dart';
 
 /// A placeholder class that represents an entity or model.
 class SimpleControl {
-  const SimpleControl(this.characteristic, this.optionName, this.optionValue);
-  final String characteristic;
+  SimpleControl(this.optionName, this.optionValue);
+  late String deviceId;
+  late String characteristicID;
   final String optionName;
-  final String optionValue;
+  String optionValue;
+  late int mtu;
+
+  void setDeviceOpts(String value, int m) { deviceId = value; mtu = m;}
+
+  void setData(String value) { optionValue = value; }
+
+  void sendData(String value) {
+    QuickBlue.writeValue(deviceId, SERVICE_ID, characteristicID, Uint8List.fromList(utf8.encode(value)), BleOutputProperty.withoutResponse);
+  }
 
   void Function() onTapGen(BuildContext context) {
     // dialog here...
@@ -31,7 +47,7 @@ class SimpleControl {
               FilledButton (
                 child: const Text('Save'),
                 onPressed: () {
-                  print(textFieldController.text);
+                  sendData(textFieldController.text);
                   // send value to characteristic...
                   Navigator.pop(context);
                 },

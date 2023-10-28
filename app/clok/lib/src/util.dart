@@ -1,5 +1,6 @@
 
 String stringToIntToMAC(String s) {
+  if (s.contains(":")) { return s; }
   var r = RegExp(r'..');
   var smac = int.parse(s).toRadixString(16).padLeft(12, '0');
   var matches = r.allMatches(smac);
