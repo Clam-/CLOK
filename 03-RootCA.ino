@@ -2,7 +2,7 @@
 // create some update method... to update once a year... (or two?)
 
 // BLE options
-BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256, true);
+BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 256);
 
 const char* RootCA_URL_default = "https://letsencrypt.org/certs/isrgrootx1.pem";
 const char* RootCA_default = \

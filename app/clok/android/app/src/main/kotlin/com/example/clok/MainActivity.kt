@@ -1,4 +1,4 @@
-package com.example.clok
+package org.nyanya.clok
 
 import io.flutter.embedding.android.FlutterActivity
 

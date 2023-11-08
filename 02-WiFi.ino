@@ -102,11 +102,11 @@ void WiFidoscanwritten(BLEDevice central, BLECharacteristic characteristic) {
   if (BLE_WiFi_doscan.value()) {
     WIFI_DoScan = true;
   } else {
-    WIFI_DoScan = false;
+    WiFi_BLE_CleanUp();
   }
 }
 void WiFi_BLE_Tick() {
-  Serial.print(WIFI_ScanReady);Serial.print("Scan Current: "); Serial.print(WIFI_ScanCurrent); Serial.print("/"); Serial.println(WIFI_ScanResults);  
+  //Serial.print(WIFI_ScanReady);Serial.print("Scan Current: "); Serial.print(WIFI_ScanCurrent); Serial.print("/"); Serial.println(WIFI_ScanResults);  
   if (WIFI_ScanReady) {
       if (WIFI_ScanCurrent < WIFI_ScanResults) {
       String tstr = String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent);
@@ -121,6 +121,9 @@ void WiFi_BLE_Tick() {
 
 void WiFi_BLE_CleanUp() {
   WIFI_DoScan = false;
+  WIFI_ScanReady = false;
+  WIFI_ScanResults = 0;
+  WIFI_ScanCurrent = 0;
 }
 
 void WiFiRunScan() {

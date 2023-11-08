@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.clok"
+    namespace "org.nyanya.clok"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 

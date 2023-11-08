@@ -1,36 +1,43 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:quick_blue/quick_blue.dart';
 
-import '../consts.dart';
+import '../type_converters/base_convert.dart';
 
-/// A placeholder class that represents an entity or model.
-class SimpleControl {
-  SimpleControl(this.optionName, this.optionValue);
-  late String deviceId;
+abstract class BaseControl<V> implements BaseConverter<V> {
+  late String deviceID;
+  late String serviceID;
   late String characteristicID;
   final String optionName;
-  String optionValue;
+  V optionValue;
   late int mtu;
+  final bool display;
+  final bool notifiable;
+  
+  BaseControl(this.optionName, this.optionValue, {this.display = true, this.notifiable = true });
 
-  void setDeviceOpts(String value, int m) { deviceId = value; mtu = m;}
+  void setDeviceOpts(String did, int m) { deviceID = did; mtu = m;}
+  void setServiceID(String sid) { serviceID = sid; }
 
-  void setData(String value) { optionValue = value; }
+  void setValue(Uint8List data) { 
+    print("SetValue: $data");
+    optionValue = decode(data);
+    print("Stored decoded value: $optionValue");
+  }
 
-  void sendData(String value) {
-    QuickBlue.writeValue(deviceId, SERVICE_ID, characteristicID, Uint8List.fromList(utf8.encode(value)), BleOutputProperty.withoutResponse);
+  void sendData(V value) {
+    print("Sending $value");
+    QuickBlue.writeValue(deviceID, serviceID, characteristicID, Uint8List.fromList(encode(value)), BleOutputProperty.withResponse);
   }
 
   void Function() onTapGen(BuildContext context) {
     // dialog here...
-    
     return () {
       showDialog<String>(
         context: context,
         builder: (BuildContext context) {
-          TextEditingController textFieldController = TextEditingController();
+          TextEditingController textFieldController = TextEditingController(text: optionValue.toString());
           return AlertDialog(
             title: Text(optionName),
             content: TextField(
@@ -47,7 +54,7 @@ class SimpleControl {
               FilledButton (
                 child: const Text('Save'),
                 onPressed: () {
-                  sendData(textFieldController.text);
+                  sendData(convertType(textFieldController.text));
                   // send value to characteristic...
                   Navigator.pop(context);
                 },
