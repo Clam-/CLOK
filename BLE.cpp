@@ -1,12 +1,18 @@
+#include "BLE.hpp"
+#include "WiFi.hpp"
+#include "RootCA.hpp"
+#include "TZ.hpp"
+#include "aClok.hpp"
 
-BLEService clokService("00000000-5AAD-BAAD-FFFF-5AD5ADBADC1C"); // 
+#include <ArduinoBLE.h>
 // characteristics are defined in the modules that are responsible for them.
+BLEService clokService("00000000-5AAD-BAAD-FFFF-5AD5ADBADC1C"); // 
 
 void BLE_Modules_Setup() {
-  WiFi_BLE_Setup();
-  rootCA_BLE_Setup();
-  TZ_BLE_Setup();
-  clok_BLE_Setup();
+  WiFi_BLE_Setup(clokService);
+  rootCA_BLE_Setup(clokService);
+  TZ_BLE_Setup(clokService);
+  clok_BLE_Setup(clokService);
 }
 
 void BLESetup() {
@@ -35,8 +41,6 @@ void BLE_ConnectionTick() {
   TZ_BLE_Tick();
   WiFi_BLE_Tick();
 }
-
-
 
 void BLETask(void *pvParameters) {
   (void) pvParameters;

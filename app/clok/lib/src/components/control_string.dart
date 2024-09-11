@@ -5,8 +5,7 @@ import '../consts.dart';
 import 'control_base.dart';
 
 class StringControl extends BaseControl<String> {
-  StringControl(optionName, optionValue, {display = true, notifiable = true }) : 
-    super(optionName, optionValue, display: display, notifiable: notifiable);
+  StringControl(super.optionName, super.optionValue, {super.display = true, super.notifiable = true, super.writeonly = false });
   
   @override
   String decode(Uint8List data) {

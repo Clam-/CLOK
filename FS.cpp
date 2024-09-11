@@ -1,3 +1,4 @@
+#include "FS.hpp"
 
 void FSSetup(){
   // apparently don't need this because console prints out that it's already mounted (????)

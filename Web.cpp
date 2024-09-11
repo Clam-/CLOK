@@ -1,6 +1,11 @@
+#include "WiFi.hpp"
+#include "Web.hpp"
+#include "RootCA.hpp"
+#include <WiFiClientSecure.h>
 
 WiFiClientSecure *WEB_CLIENT;
 HTTPClient HTTP_Client;
+extern char* ROOTCA;
 
 void webSetup() {
   rootCAsetup();

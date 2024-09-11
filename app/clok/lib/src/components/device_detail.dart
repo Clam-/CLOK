@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:clok/src/components/control_base.dart';
 import 'package:convert/convert.dart';
-import 'package:flutter/gestures.dart';
 import 'package:quick_blue/quick_blue.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +24,7 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
 
   // state vars
   bool _bleConnected = false;
+  List<dynamic Function()> getQueue = [];
   
   // Options List
   final items = <String, BaseControl>{
@@ -64,10 +64,19 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
     print("...Discovering...");
   }
 
-  void setNotifies(String deviceId, String serviceId, String chara, int delay) {
+  void setNotify(String deviceId, String serviceId, String chara, int delay) {
     Future.delayed(Duration(milliseconds: delay), () { 
       print("Setting notify ($chara)");
       QuickBlue.setNotifiable(deviceId, serviceId, chara, BleInputProperty.notification);
+    });
+  }
+  void setupNotifiers() {
+    int delay = 500;
+    for (final item in items.values) {
+      if (item.notifiable) { setNotify(item.deviceID, item.serviceID, item.characteristicID, delay); delay += 1500; }
+    }
+    Future.delayed(Duration(milliseconds: delay), () { 
+      if (mounted) { setState(() => _bleConnected = true ); } 
     });
   }
 
@@ -75,20 +84,16 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
     print('_handleServiceDiscovery $deviceId, $serviceId, $characteristics');
     if (!mounted) { return; }
     if (serviceId == SERVICE_ID) {
-      // store platform specific case of characteristics because... reasons ????
-      int delay = 1000;
       for (final chara in characteristics) {
         var item = items[chara];
         if (item != null) {
           item.characteristicID = chara;
           item.setServiceID(serviceId);
-          if (item.notifiable) { setNotifies(deviceId, serviceId, chara, delay); delay += 1500; }
+          if (!item.writeonly) { getQueue.add(item.getValue); }
         }
       }
-
-      Future.delayed(Duration(milliseconds: delay), () { 
-        if (mounted) { setState(() => _bleConnected = true ); } 
-      });
+      // get first value:
+      if (getQueue.isNotEmpty) { getQueue.removeAt(0)(); }
     }
   }
   @override
@@ -101,13 +106,17 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
     print("...DISPOSE...");
   }
   // TODO: probably want to get initial values first, then set notifiers then enable UI elements...
-  
+
   void _handleValueChange(String deviceId, String characteristicId, Uint8List value) {
     print('_handleValueChange $deviceId, $characteristicId, ${hex.encode(value)}');
     // oh goodness, I have to make my own data parser??? aaaaa, how is this harder than arduino!? haha.
     // dispatch value
     setState(() => items[characteristicId]?.setValue(value) );
-
+    // if queue, initiate next queued get... otherwise setup notifiers
+    if (getQueue.isNotEmpty) { getQueue.removeAt(0)(); }
+    else {
+      setupNotifiers();
+    }
   }
 
   @override

@@ -1,9 +1,13 @@
-// include root let's encrypt
-// create some update method... to update once a year... (or two?)
-
+#include "RootCA.hpp"
+#include <Preferences.h>
+#include "Prefs.hpp"
+#include "Web.hpp"
 // BLE options
 BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 256);
 
+extern Preferences preferences;
+// include root let's encrypt
+// create some update method... to update once a year... (or two?)
 const char* RootCA_URL_default = "https://letsencrypt.org/certs/isrgrootx1.pem";
 const char* RootCA_default = \
 "-----BEGIN CERTIFICATE-----\
@@ -40,23 +44,19 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
 
 unsigned long ROOTCA_PREV_TIME = 1000000; // 1000 seconds start (16~mins)
 unsigned long ROOTCA_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
-char* ROOTCA = NULL;
+extern char* ROOTCA = NULL;
 size_t ROOTCA_LEN = 0;
 
-void rootCA_BLE_Setup() {
+void rootCA_BLE_Setup(BLEService clokService) {
   // BLE setup
   clokService.addCharacteristic(BLE_RootCA_URL);
   // init string value
-  BLE_RootCA_URL.writeValue("");
   BLE_RootCA_URL.setEventHandler(BLEWritten, rootCAURLwritten);
+  rootCAsetup();
 }
 
 void rootCAsetup() {
-  // check if certURL exists:
-  String url = preferences.getString("ROOTCA-URL");
-  // if doesn't exist, put the default one in
-  if (url == "") { preferences.putString("ROOTCA-URL", RootCA_URL_default); }
-
+  BLE_RootCA_URL.writeValue(preferences.getString("ROOTCA-URL", RootCA_URL_default).c_str());
   // check if cert exists in preferences
   size_t size = preferences.getUInt("ROOTCA-len", 0);
   // if doesn't exist, put the default one in, along with length
@@ -92,7 +92,7 @@ void processNewCA(String &body, String &etag) {
 
 void rootCACheck(unsigned long &now) {
   if (now - ROOTCA_PREV_TIME > ROOTCA_CHECK_TIME) {
-    String url = preferences.getString("ROOTCA-URL");
+    String url = preferences.getString("ROOTCA-URL", RootCA_URL_default);
     String etag = preferences.getString("ROOTCA-ETag");
     if (getURL(url.c_str(), NULL, processNewCA, etag)) {
       ROOTCA_PREV_TIME = now;

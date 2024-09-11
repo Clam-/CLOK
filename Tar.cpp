@@ -1,3 +1,4 @@
+#include "Tar.hpp"
 
 TarUnpacker *TAR_P;
 

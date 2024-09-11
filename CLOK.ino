@@ -1,24 +1,4 @@
 #include <Arduino.h>
-// utils
-#include "esp_netif.h"
-#include "lwip/apps/sntp.h"
-#include "esp32-hal.h"
-//FS
-#include "FS.h"
-#include <LittleFS.h>
-//Wifi
-#include <WiFi.h>
-#include <WiFiMulti.h>
-//BLE
-#include <ArduinoBLE.h>
-//Web
-#include <HTTPClient.h>
-#include <WiFiClientSecure.h>
-//Tar
-#define DEST_FS_USES_LITTLEFS
-#include <ESP32-targz.h>
-// TZ
-#include "esp_sntp.h"
 
 // FreeRTOS
 #if CONFIG_FREERTOS_UNICORE
@@ -27,22 +7,25 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-//Preferences
-#include "nvs.h"
-#include "nvs_flash.h"
-#include "esp_partition.h"
-#include <Preferences.h>
-Preferences preferences;
-  
+
+#include "Prefs.hpp"
+#include "BLE.hpp"
+#include "FS.hpp"
+#include "Tar.hpp"
+#include "WiFi.hpp"
+#include "RootCA.hpp"
+#include "Web.hpp"
+#include "TZ.hpp"
+#include "aClok.hpp"
+
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
 void BackgroundTasks(void *pvParameters);  //webfetch, update, etc...
-bool WIFI_CONNECTED = false;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  preferences.begin("clok", false);
+  prefsSetup();
   // start background tasks:
   Serial.println("Creating WiFiTask...");
   xTaskCreate(WiFiTask, "WiFiTask",  4096, NULL, 17, NULL);
@@ -60,7 +43,7 @@ void setup() {
 void loop() {
   // I guess clock related items are in the main loop task?
   clokTick();
-  delay(5000);
+  delay(2000);
 }
 
 void BackgroundTasks(void *pvParameters){

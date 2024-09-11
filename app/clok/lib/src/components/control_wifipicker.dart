@@ -20,8 +20,7 @@ class WiFiPickerControl extends BaseControl<String> {
   static Comparator<DropdownMenuEntry<WiFiItem>> nameComparator = (a, b) => a.value.compareTo(b.value);
   WiFiItem? wi;
 
-  WiFiPickerControl(optionName, optionValue, {display = true, notifiable = true}) : 
-    super(optionName, optionValue, display: display, notifiable: notifiable);
+  WiFiPickerControl(super.optionName, super.optionValue, {super.display = true, super.notifiable = true, super.writeonly = false });
   
   @override
   String decode(Uint8List data) {
@@ -35,7 +34,8 @@ class WiFiPickerControl extends BaseControl<String> {
   void setValue(Uint8List data) { 
     final d = decode(data);
     final di = d.split("|");
-    final rssi = int.parse(di[0]);
+    final rssi = int.tryParse(di[0]);
+    if (rssi == null) { return; }
     final ssid = di.sublist(1).join("|");
     var found = false;
     for(final i in wifiEntries) {

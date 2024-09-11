@@ -1,22 +1,26 @@
+#include "esp_netif.h"
+//#include "lwip/apps/esp_sntp.h"
+#include "esp32-hal.h"
+
 bool prefix(const char *pre, const char *str)
 {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
 // shinanigans: https://sourceware.org/legacy-ml/newlib/2018/msg00309.html
-void CLOKconfigTzTime(char* tz_env, const char* tz_str, const char* server1, const char* server2)
+void CLOKconfigTzTime(char* tz_env, const char* tz_str, const char* server1, const char* server2, bool firsttime=false)
 {
     //tcpip_adapter_init();  // Should not hurt anything if already inited
     esp_netif_init();
-    if(sntp_enabled()){
-        sntp_stop();
+    if(esp_sntp_enabled()){
+        esp_sntp_stop();
     }
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, (char*)server1);
     sntp_setservername(1, (char*)server2);
     sntp_init();
     strcpy(tz_env, (char*)tz_str);
-    putenv(tz_env);
+    if (firsttime) { putenv(tz_env); }
     tzset();
 }
 

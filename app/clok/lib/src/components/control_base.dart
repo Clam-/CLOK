@@ -14,8 +14,9 @@ abstract class BaseControl<V> implements BaseConverter<V> {
   late int mtu;
   final bool display;
   final bool notifiable;
+  final bool writeonly;
   
-  BaseControl(this.optionName, this.optionValue, {this.display = true, this.notifiable = true });
+  BaseControl(this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false });
 
   void setDeviceOpts(String did, int m) { deviceID = did; mtu = m;}
   void setServiceID(String sid) { serviceID = sid; }
@@ -24,6 +25,11 @@ abstract class BaseControl<V> implements BaseConverter<V> {
     print("SetValue: $data");
     optionValue = decode(data);
     print("Stored decoded value: $optionValue");
+  }
+
+  void getValue() {
+    print("Attemping get: $characteristicID");
+    if (!writeonly) { QuickBlue.readValue(deviceID, serviceID, characteristicID); }
   }
 
   void sendData(V value) {
