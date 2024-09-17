@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
 import 'components/device_detail.dart';
 import 'components/device_list.dart';
@@ -70,8 +71,8 @@ class MyApp extends StatelessWidget {
                   case SettingsView.routeName:
                     return SettingsView(controller: settingsController);
                   case DeviceDetailsView.routeName:
-                    final args = routeSettings.arguments! as String;
-                    return DeviceDetailsView(deviceId: args);
+                    final args = routeSettings.arguments! as BluetoothDevice;
+                    return DeviceDetailsView(device: args);
                   case DeviceListView.routeName:
                   default:
                     return const DeviceListView();

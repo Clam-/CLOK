@@ -1,40 +1,40 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:quick_blue/quick_blue.dart';
+import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
 import '../type_converters/base_convert.dart';
 
 abstract class BaseControl<V> implements BaseConverter<V> {
-  late String deviceID;
-  late String serviceID;
-  late String characteristicID;
+  BluetoothCharacteristic chara;
   final String optionName;
   V optionValue;
-  late int mtu;
   final bool display;
   final bool notifiable;
   final bool writeonly;
   
-  BaseControl(this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false });
-
-  void setDeviceOpts(String did, int m) { deviceID = did; mtu = m;}
-  void setServiceID(String sid) { serviceID = sid; }
-
-  void setValue(Uint8List data) { 
+  BaseControl(this.chara, this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false }) {
+    if (this.writeonly) {
+      this.getValue();
+    }
+  }
+  void setValue(ByteData data) { 
     print("SetValue: $data");
     optionValue = decode(data);
     print("Stored decoded value: $optionValue");
   }
 
-  void getValue() {
-    print("Attemping get: $characteristicID");
-    if (!writeonly) { QuickBlue.readValue(deviceID, serviceID, characteristicID); }
+   void getValue() async {
+    print("Attemping get: ${chara.uuid}");
+    if (!writeonly) { 
+      if (this.chara.isNotifying) { this.chara.readValue(); }
+      else { this.setValue(await this.chara.readValue()); }
+    }
   }
 
   void sendData(V value) {
     print("Sending $value");
-    QuickBlue.writeValue(deviceID, serviceID, characteristicID, Uint8List.fromList(encode(value)), BleOutputProperty.withResponse);
+    this.chara.writeValueWithoutResponse(encode(value));
   }
 
   void Function() onTapGen(BuildContext context) {

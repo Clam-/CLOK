@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 abstract class BaseConverter<T> {
-  T decode(Uint8List data);
+  T decode(ByteData data);
   Uint8List encode(T data);
   T convertType(String value);
 }
