@@ -37,9 +37,16 @@ void BLE_ConnectionCleanUp() {
   TZ_CleanUp();
   WiFi_BLE_CleanUp();
 }
+int tick = 0;
 void BLE_ConnectionTick() {
-  TZ_BLE_Tick();
-  WiFi_BLE_Tick();
+  // only process every 10 ticks
+  if (tick >= 10){
+    TZ_BLE_Tick();
+    WiFi_BLE_Tick();
+    tick = 0;
+  } else {
+    tick++;
+  }
 }
 
 void BLETask(void *pvParameters) {
@@ -61,7 +68,7 @@ void BLETask(void *pvParameters) {
         // if the remote device wrote to the characteristic,
         // tick BLE related functions
         BLE_ConnectionTick();
-        delay(500);
+        delay(50);
       }
       // cleanup...
       BLE_ConnectionCleanUp();

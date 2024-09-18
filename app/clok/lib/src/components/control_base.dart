@@ -6,6 +6,7 @@ import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 import '../type_converters/base_convert.dart';
 
 abstract class BaseControl<V> implements BaseConverter<V> {
+  Function updatemethod;
   BluetoothCharacteristic chara;
   final String optionName;
   V optionValue;
@@ -13,11 +14,20 @@ abstract class BaseControl<V> implements BaseConverter<V> {
   final bool notifiable;
   final bool writeonly;
   
-  BaseControl(this.chara, this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false }) {
-    if (this.writeonly) {
-      this.getValue();
+  BaseControl(this.updatemethod, this.chara, this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false }) {
+    if (!this.writeonly) {
+      //this.getValue();
+      if (this.chara.properties.notify) {
+        this.chara.value.listen((ByteData d) { setValue(d); updatemethod((){});});
+      }
     }
   }
+  @override
+  bool operator ==(other) => optionName.hashCode == other.hashCode;
+
+  @override
+  int get hashCode => optionName.hashCode;
+
   void setValue(ByteData data) { 
     print("SetValue: $data");
     optionValue = decode(data);
@@ -34,7 +44,7 @@ abstract class BaseControl<V> implements BaseConverter<V> {
 
   void sendData(V value) {
     print("Sending $value");
-    this.chara.writeValueWithoutResponse(encode(value));
+    this.chara.writeValueWithResponse(encode(value));
   }
 
   void Function() onTapGen(BuildContext context) {

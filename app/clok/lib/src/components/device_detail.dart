@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:clok/src/components/control_base.dart';
+import 'package:clok/src/components/control_wifideleter.dart';
 import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 import 'package:flutter/material.dart';
 
@@ -22,28 +25,36 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
 
   // state vars
   bool _bleConnected = false;
-  List<dynamic Function()> getQueue = [];
-  // Options List
-  final items = <BaseControl>[] = [];
+  StreamSubscription? connectListener;
+  final items = <BaseControl>[] = []; // Options List
   BaseControl? wifiScanControl;
   @override
   void initState() {
     super.initState();
     // setup handlers
     if (widget.device.hasGATT) {
-      widget.device.connected.listen(_handleConnectionChange);
-      widget.device.connect();
+      connectListener = widget.device.connected.listen(_handleConnectionChange);
+      widget.device.connect().catchError(_onConnectError);
     }
+  }
+  FutureOr<void> _onConnectError(Object o) {
+    print("Connect error: $o");
+    // attempt reconnect
+    widget.device.connect().catchError(_onConnectError);
   }
   void _handleConnectionChange(bool connected) {
     print('_handleConnectionChange $connected');
-    if (!mounted) { return; }
-    if (connected) { _onConnect(); }
-    else { Navigator.pop(context); } // disconencted
+    //if (!mounted) { return; }
+    if (connected) { _onConnect(); setState(() { _bleConnected = true; });  }
+    else { 
+      // ignore initial connected state...
+      if (_bleConnected != false) { Navigator.pop(context); }
+    } // disconencted
   }
-  // get MTU, then discover services
-  void _onConnect() async {
-    //for (final key in items.keys) { items[key]?.setDeviceOpts(widget.deviceId, mtu); }
+  
+  void _onConnect() {
+    // discover services
+    if (_bleConnected) { return; } // bail if already connected so we don't double/triple request.
     widget.device.discoverServices().then(_handleServiceDiscovery);
     print("...Discovering...");
   }
@@ -52,34 +63,55 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
     print('_handleServiceDiscovery $services');
     if (!mounted) { return; }
     for (final service in services) {
+      print("Processing ${service.uuid}");
       if (service.uuid == SERVICE_ID) {
+        if (items.isNotEmpty) { continue; } // skip if have already added items
+        // store reference to delete chara
+        BluetoothCharacteristic? wdc;
         for (final chara in await service.getCharacteristics()) {
           // ugly.
           switch(chara.uuid) {
             case ROOTCA_URL:
-              items.add(StringControl(chara, "RootCA URL", ""));
+              if (!items.contains("RootCA URL")) { // guards justtttt in case we were somehow still connected to a device.
+                items.add(StringControl(setState, chara, "RootCA URL", ""));
+              } else { print("WE DOUBLINGGGGGGGGGG."); }
             case TZ_ZONEINFO_URL:
-              items.add(StringControl(chara, "TZ ZoneInfo URL", ""));
+              if (!items.contains("TZ ZoneInfo URL")) { items.add(StringControl(setState, chara, "TZ ZoneInfo URL", "")); }
             case TZ_NTP1:
-              items.add(StringControl(chara, "TZ NTP Server 1", ""));
+              if (!items.contains("TZ NTP Server 1")) { items.add(StringControl(setState, chara, "TZ NTP Server 1", "")); }
             case TZ_NTP2:
-              items.add(StringControl(chara, "TZ NTP Server 2", ""));
+              if (!items.contains("TZ NTP Server 2")) { items.add(StringControl(setState, chara, "TZ NTP Server 2", "")); }
             case WIFI_SSIDS:
-              items.add(WiFiPickerControl(chara, "Add WiFi SSID & Key", ""));
-            case WIFI_DOSCAN :
-              wifiScanControl = ToggleControl(chara, "WiFi Scan", false, display: false);
+              if (!items.contains("Add WiFi SSID & Key")) { items.add(WiFiPickerControl(setState, chara, "Add WiFi SSID & Key", "")); }
+            case WIFI_DOSCAN:
+              if (!items.contains("WiFi Scan")) { wifiScanControl = ToggleControl(setState, chara, "WiFi Scan", false, display: false); }
+            case WIFI_KNOWN:
+              if (!items.contains("Known SSIDs")) { 
+                items.add(WiFiDeleteControl(setState, chara, "Known SSIDs", "", dc: wdc));
+              }
+            case WIFI_DELETE:
+              wdc = chara; // assume this gets processed before WIFI_KNOWN... hopefully this doesn't break in the future...
           }
-          if (chara.properties.hasNotify) { chara.startNotifications(); }
+          if (chara.properties.notify && !chara.isNotifying) {
+            print("setup notifier ${chara.uuid}");
+            chara.startNotifications().catchError((FutureOr<void> e) {print("Why? $e - ${chara.uuid} - ${chara.properties.hasNotify}"); });
+          }
+          setState(() {  }); // does this update the view? the answer is yes.
         }
       }
     }
   }
   @override
   void dispose() {
-    super.dispose();
-    widget.device.disconnect();
+    var device = widget.device; // so we can free up the widget reference and not refer back to it after disposed.
+    Timer(const Duration(milliseconds: 1), () async {
+      await connectListener?.cancel();
+      device.disconnect();
+    });
     print("...DISPOSE...");
+    super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +154,9 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _bleConnected ? () { wifiScanControl!.sendData(!wifiScanControl!.optionValue); } : null ,
-        tooltip: wifiScanControl!.optionValue ? 'Stop Scan' : 'Start Scan',
-        child: _bleConnected ? wifiScanControl!.optionValue ? const Icon(Icons.signal_wifi_statusbar_null): const Icon(Icons.wifi_find) : const Icon(Icons.signal_wifi_bad),
+        onPressed: _bleConnected ? () { wifiScanControl?.sendData(!wifiScanControl!.optionValue); } : (){},
+        tooltip: _bleConnected ? wifiScanControl != null && wifiScanControl?.optionValue ? 'Stop Scan' : 'Start Scan' : 'Not ready to scan for WiFi networks',
+        child: _bleConnected ? wifiScanControl != null && wifiScanControl?.optionValue ? const Icon(Icons.signal_wifi_statusbar_null) : const Icon(Icons.wifi_find) : const Icon(Icons.signal_wifi_bad),
       )
     );
   }

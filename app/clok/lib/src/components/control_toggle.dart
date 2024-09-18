@@ -3,7 +3,9 @@ import 'dart:typed_data';
 import 'control_base.dart';
 
 class ToggleControl extends BaseControl<bool> {
-  ToggleControl(super.chara, super.optionName, super.optionValue, {super.display = true, super.notifiable = true, super.writeonly = false });
+  ToggleControl(super.updatemethod, super.chara, super.optionName, super.optionValue, 
+    {super.display = true, super.notifiable = true, super.writeonly = false }
+  );
   
   @override
   bool decode(ByteData data) {

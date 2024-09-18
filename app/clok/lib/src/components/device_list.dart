@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription;
 
+import 'package:clok/src/consts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
@@ -71,23 +72,21 @@ class _DeviceListView extends State<DeviceListView> {
           title: Text('${_knownDevices[index].name}'),
           subtitle: Text(_knownDevices[index].id),
           onTap: () {
-            // stop scan if scanning
-            // if (_scanning) { _toggleScan(); }
-            Navigator.pushNamed(context, DeviceDetailsView.routeName, arguments: _knownDevices[index].id);
+            Navigator.pushNamed(context, DeviceDetailsView.routeName, arguments: [_knownDevices[index].id, _knownDevices[index]]);
         }),
       ),
       floatingActionButton: StreamBuilder(
         // Initialize FlutterFire:
         stream: FlutterWebBluetooth.instance.isAvailable,
         builder: (context, snapshot) {
-          final requestOptions = RequestOptionsBuilder.acceptAllDevices(optionalServices: [
-            BluetoothDefaultServiceUUIDS.deviceInformation.uuid
-          ]);
+          final requestOptions = RequestOptionsBuilder(
+            [RequestFilterBuilder(services: [SERVICE_ID])]
+          );
           bool ready = (snapshot.data ?? false);
           return ready ? FloatingActionButton(
             onPressed: () {FlutterWebBluetooth.instance.requestDevice(requestOptions); }, // add new device
             tooltip: 'Add Clok',
-            child: const Icon(Icons.search_off),
+            child: const Icon(Icons.more_time),
             ) : const SizedBox.shrink();
           }
       )

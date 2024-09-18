@@ -64,15 +64,22 @@ class MyApp extends StatelessWidget {
           // Define a function to handle named routes in order to support
           // Flutter web url navigation and deep linking.
           onGenerateRoute: (RouteSettings routeSettings) {
+            RouteSettings rs = routeSettings;
+            if (routeSettings.name == DeviceDetailsView.routeName && routeSettings.arguments == null) {
+              // Super ghetto: re-route if null args
+              rs = RouteSettings(name: DeviceListView.routeName, arguments: routeSettings.arguments);
+            }
             return MaterialPageRoute<void>(
-              settings: routeSettings,
+              settings: rs,
               builder: (BuildContext context) {
-                switch (routeSettings.name) {
+                switch (rs.name) {
                   case SettingsView.routeName:
                     return SettingsView(controller: settingsController);
                   case DeviceDetailsView.routeName:
-                    final args = routeSettings.arguments! as BluetoothDevice;
-                    return DeviceDetailsView(device: args);
+                    final args = rs.arguments as List<dynamic>;
+                    final device = args[1]! as BluetoothDevice;
+                    final idkey = ValueKey<String>(args[0]! as String);
+                    return DeviceDetailsView(key: idkey, device: device);
                   case DeviceListView.routeName:
                   default:
                     return const DeviceListView();

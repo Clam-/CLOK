@@ -20,7 +20,9 @@ class WiFiPickerControl extends BaseControl<String> {
   static Comparator<DropdownMenuEntry<WiFiItem>> nameComparator = (a, b) => a.value.compareTo(b.value);
   WiFiItem? wi;
 
-  WiFiPickerControl(super.chara, super.optionName, super.optionValue, {super.display = true, super.notifiable = true, super.writeonly = false });
+  WiFiPickerControl(super.updatemethod, super.chara, super.optionName, super.optionValue, 
+    {super.display = true, super.notifiable = true, super.writeonly = false }
+  );
   
   @override
   String decode(ByteData data) {
@@ -51,7 +53,6 @@ class WiFiPickerControl extends BaseControl<String> {
   @override
   void sendData(String value) {
     // ignore value because this is special...
-
   }
   
   @override
