@@ -28,6 +28,7 @@ class WiFiDeleteControl extends BaseControl<String> {
   @override
   void setValue(ByteData data) { 
     final d = decode(data);
+    print("Received value: $d to ${chara.uuid}");
     if (!wifiEntries.contains(d)) {
       wifiEntries.add(d);
     }
@@ -53,15 +54,17 @@ class WiFiDeleteControl extends BaseControl<String> {
           String? selected = wifiEntries.isNotEmpty ? wifiEntries[0] : null;
           return AlertDialog(
             title: Text("$optionName - Select to delete"),
-            content: SingleChildScrollView(
-              child: ListView.builder(itemBuilder: (context, index) {
-                return RadioListTile(groupValue: selected,
-                  value: wifiEntries[index],
-                  onChanged: (value) => selected = value,
-                );
-              },
-              itemCount: wifiEntries.length)
-            ),
+            content: 
+              Container(
+                width: double.maxFinite,
+                child: ListView.builder(itemBuilder: (context, index) {
+                    return RadioListTile(groupValue: selected,
+                      value: wifiEntries[index],
+                      onChanged: (value) => selected = value,
+                    );
+                  },
+                  itemCount: wifiEntries.length)
+              ),
             actions: <Widget>[
               TextButton (
                 child: const Text('Cancel'),

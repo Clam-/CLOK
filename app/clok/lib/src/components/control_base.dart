@@ -43,7 +43,7 @@ abstract class BaseControl<V> implements BaseConverter<V> {
   }
 
   void sendData(V value) {
-    print("Sending $value");
+    print("Sending $value to ${chara.uuid}");
     this.chara.writeValueWithResponse(encode(value));
   }
 

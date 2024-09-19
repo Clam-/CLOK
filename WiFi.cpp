@@ -82,6 +82,7 @@ void WiFiSetup() {
 void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
   WiFiputSSID((char*)BLE_WiFi_ssid.value(), (char*)BLE_WiFi_wpakey.value());
   // reboot...
+  Serial.println("RESTARTING...");
   delay(3000);
   ESP.restart();
 }
@@ -89,6 +90,7 @@ void WiFiwpakeywritten(BLEDevice central, BLECharacteristic characteristic) {
 void WiFiSSIDDelete(BLEDevice central, BLECharacteristic characteristic) {
   WiFiremoveSSID((char*)characteristic.value());
   // reboot...
+  Serial.println("RESTARTING...");
   delay(3000);
   ESP.restart();
 }
@@ -105,7 +107,7 @@ void WiFiscanwritten(BLEDevice central, BLECharacteristic characteristic) {
   WIFI_Scan = BLE_WiFi_scan.value();
 }
 
-unsigned char WIFI_Known_Index = 0;
+unsigned char WIFI_Known_Index = WIFI_AP_LIMIT+1;
 
 void WiFi_BLE_Connected() { }
 void WiFi_BLE_Tick() {
@@ -124,9 +126,11 @@ void WiFi_BLE_Tick() {
     }
     BLE_WiFi_known.writeValue(":"); // end of list...
     WIFI_Known_Index++;
-    if (WIFI_Known_Index > WIFI_AP_LIMIT+50) { WIFI_Known_Index = 0; }
     return;
-  } else if (WIFI_ScanProgress > 0) {
+  }
+  WIFI_Known_Index++; // using this as a delay before sending next round of known SSIDs, to continuously send.
+  if (WIFI_Known_Index > WIFI_AP_LIMIT+30) { WIFI_Known_Index = 0; }
+  if (WIFI_ScanProgress > 0) {
     Serial.print("Scan Current: "); Serial.print(WIFI_ScanCurrent); Serial.print(" Results: "); Serial.println(WIFI_ScanResults);
     if (WIFI_ScanCurrent < WIFI_ScanResults) {
       String tstr = String(WiFi.RSSI(WIFI_ScanCurrent))+"|"+WiFi.SSID(WIFI_ScanCurrent);
@@ -173,7 +177,9 @@ void WiFiTask(void *pvParameters) {
         Serial.println("Cleaning up scan.");
         WiFi.scanDelete();
         WIFI_ScanProgress = 0;
-        WIFI_Multi.run();
+    } else if (WIFI_Scan == 0 && WIFI_ScanProgress == 0) {
+      Serial.println("Attempting to connect to WiFi...");
+      WIFI_Multi.run();
     }
     while (WiFi.status() == WL_CONNECTED) {
       WIFI_CONNECTED = true;
@@ -201,5 +207,5 @@ void WiFi_BLE_Setup(BLEService clokService) {
   BLE_WiFi_wpakey.writeValue("_");
   BLE_WiFi_wpakey.setEventHandler(BLEWritten, WiFiwpakeywritten);
   BLE_WiFi_scan.setEventHandler(BLEWritten, WiFiscanwritten);
-  BLE_WiFi_scan.setEventHandler(BLEWritten, WiFiSSIDDelete);
+  BLE_WiFi_delete.setEventHandler(BLEWritten, WiFiSSIDDelete);
 }

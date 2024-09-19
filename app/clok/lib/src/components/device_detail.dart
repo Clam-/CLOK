@@ -68,6 +68,8 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
         if (items.isNotEmpty) { continue; } // skip if have already added items
         // store reference to delete chara
         BluetoothCharacteristic? wdc;
+        BluetoothCharacteristic? wsc;
+        BluetoothCharacteristic? wkc;
         for (final chara in await service.getCharacteristics()) {
           // ugly.
           switch(chara.uuid) {
@@ -82,7 +84,7 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
             case TZ_NTP2:
               if (!items.contains("TZ NTP Server 2")) { items.add(StringControl(setState, chara, "TZ NTP Server 2", "")); }
             case WIFI_SSIDS:
-              if (!items.contains("Add WiFi SSID & Key")) { items.add(WiFiPickerControl(setState, chara, "Add WiFi SSID & Key", "")); }
+              if (!items.contains("Add WiFi SSID & Key")) { items.add(WiFiPickerControl(setState, chara, "Add WiFi SSID & Key", "", ssidchar: wsc, keychar: wkc)); }
             case WIFI_DOSCAN:
               if (!items.contains("WiFi Scan")) { wifiScanControl = ToggleControl(setState, chara, "WiFi Scan", false, display: false); }
             case WIFI_KNOWN:
@@ -91,6 +93,10 @@ class _DeviceDetailsView extends State<DeviceDetailsView> {
               }
             case WIFI_DELETE:
               wdc = chara; // assume this gets processed before WIFI_KNOWN... hopefully this doesn't break in the future...
+            case WIFI_REQUESTSSID:
+              wsc = chara; // like above... I hope the discovery order is consistent...
+            case WIFI_WPAKEY:
+              wkc = chara; // ditto 
           }
           if (chara.properties.notify && !chara.isNotifying) {
             print("setup notifier ${chara.uuid}");

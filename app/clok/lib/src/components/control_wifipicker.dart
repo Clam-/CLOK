@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
 import '../consts.dart';
 import 'control_base.dart';
@@ -19,9 +20,11 @@ class WiFiPickerControl extends BaseControl<String> {
   final List<DropdownMenuEntry<WiFiItem>> wifiEntries = <DropdownMenuEntry<WiFiItem>>[];
   static Comparator<DropdownMenuEntry<WiFiItem>> nameComparator = (a, b) => a.value.compareTo(b.value);
   WiFiItem? wi;
+  final BluetoothCharacteristic? ssidchar;
+  final BluetoothCharacteristic? keychar;
 
   WiFiPickerControl(super.updatemethod, super.chara, super.optionName, super.optionValue, 
-    {super.display = true, super.notifiable = true, super.writeonly = false }
+    {super.display = true, super.notifiable = true, super.writeonly = false, this.ssidchar, this.keychar }
   );
   
   @override
@@ -53,6 +56,14 @@ class WiFiPickerControl extends BaseControl<String> {
   @override
   void sendData(String value) {
     // ignore value because this is special...
+  }
+  void sendCustomData(String ssid, String key) async {
+    if (ssidchar != null && ssid.isNotEmpty && keychar != null){
+      print("Sending SSID: $ssid, Key: $key");
+      print("RAW SSID: ${encode(ssid)}, Raw Key: ${encode(key)}");
+      //await ssidchar!.writeValueWithResponse(encode(ssid));
+      //keychar!.writeValueWithResponse(encode(key));
+    }
   }
   
   @override
@@ -95,7 +106,9 @@ class WiFiPickerControl extends BaseControl<String> {
               FilledButton (
                 child: const Text('Save'),
                 onPressed: () {
-                  sendData("");
+                  if (wi != null){
+                    sendCustomData(wi!.ssid, textFieldController.text);
+                  }
                   // send value to characteristic...
                   Navigator.pop(context);
                 },
