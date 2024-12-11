@@ -11,7 +11,6 @@ class StringControl extends BaseControl<String> {
   
   @override
   String decode(ByteData data) {
-    print("${data.offsetInBytes} - ${data.lengthInBytes} - ${data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes)}");
     return UTF8_DECODE.convert(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   }
   

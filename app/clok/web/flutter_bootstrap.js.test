@@ -1,0 +1,6 @@
+{{flutter_js}}
+{{flutter_build_config}}
+
+const uConfig = { canvasKitBaseUrl: "/canvaskit/" };
+
+_flutter.loader.load();

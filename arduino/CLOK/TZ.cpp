@@ -6,33 +6,38 @@
 
 #include "Prefs.hpp"
 
+// c strings in this module are all null terminated. Please ensure this is the case. EXCEPT TZ-version.
+
 char *TZ_ENV = (char*)malloc(sizeof(char)*100);
 // TZ Defaults...
-const char* TZ_ZONEINFO_URL = "http://192.168.25.250:9999/zoneinfo.tar";
+const char* TZ_ZONEINFO_URL = "http://zoneinfo.nyanya.org/zoneinfo.tar";
 const char* TZ_TIMEZONE = "UTC";
 const char* TZ_NTP1 = "time.nist.gov"; // TODO: add handlers to actually allow changing of NTP... haha.
 const char* TZ_NTP2 = "pool.ntp.org";
 
 unsigned long TZ_CHECK_TIME = 1209600000; // (2*7*24*60*60*1000) 2weekly checks.
+unsigned long TZ_TICK_DELAY = 6; // How many ticks should past between actually doing the check. This is to stop too many GETs if something goes wrong.
 // The following offset means it'll first attempt to check 2mins post boot. (or until NTP syncs current time...)
 unsigned long TZ_PREV_TIME = -TZ_CHECK_TIME + (60*1000*2);
 
 BLECharacteristic BLE_TZ_zoneinfoURL("00000051-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 256);
-BLECharacteristic BLE_TZ_timezone("00000052-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256);
-BLECharacteristic BLE_TZ_regions("00000053-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100);
-BLECharacteristic BLE_TZ_region("00000054-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLEWrite | BLERead, 100);
-BLECharacteristic BLE_TZ_timezones("00000055-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100);
+BLECharacteristic BLE_TZ_region("00000052-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLEWrite | BLERead, 100);
+BLECharacteristic BLE_TZ_timezones("00000053-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100);
+BLECharacteristic BLE_TZ_timezone("00000054-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite, 256);
+BLECharacteristic BLE_TZ_regions("00000055-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 100);
 BLECharacteristic BLE_TZ_ntp1("00000056-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 100); 
 BLECharacteristic BLE_TZ_ntp2("00000057-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 100);
+BLECharacteristic BLE_TZ_version("00000058-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLENotify, 10);
 
 void TZ_BLE_Setup(BLEService clokService) {
   clokService.addCharacteristic(BLE_TZ_zoneinfoURL);
   clokService.addCharacteristic(BLE_TZ_timezone);
-  clokService.addCharacteristic(BLE_TZ_regions);
   clokService.addCharacteristic(BLE_TZ_region);
   clokService.addCharacteristic(BLE_TZ_timezones);
+  clokService.addCharacteristic(BLE_TZ_regions);
   clokService.addCharacteristic(BLE_TZ_ntp1);
   clokService.addCharacteristic(BLE_TZ_ntp2);
+  clokService.addCharacteristic(BLE_TZ_version);
   // init string values...
   BLE_TZ_regions.writeValue("_");
   BLE_TZ_region.writeValue("_");
@@ -100,16 +105,31 @@ void TZ_BLE_Connected() {
   // open root of tz
   TZ_DIR = LittleFS.open("/zoneinfo");
   TZ_DIR_LIST_FINISH = false;
+  // write version to chara:
+  updateTZversionChara();
 }
 
+void updateTZversionChara() {
+  int s;
+  s = preferences.getBytesLength("TZ-Version");
+  char buf[s];
+  preferences.getBytes("TZ-Version", buf, s);
+  BLE_TZ_version.writeValue(buf, s, true);
+}
 
 void BLE_TZ_timezonewritten(BLEDevice central, BLECharacteristic characteristic) {
   // now read timezone, load timezone file and use last line as TZ env
-  String tz = String((char*)BLE_TZ_timezone.value());
-  preferences.putString("TZ-TimeZone", tz);
-  if (tz != "") {
-    fs::File f = LittleFS.open(tz);
+  int s;
+  s = characteristic.valueLength();
+  char buf[s+1];
+  memcpy(buf, BLE_TZ_timezone.value(), s);
+  buf[s-1] = '\0';
+  preferences.putString("TZ-TimeZone", buf);
+  if (buf != "") {
+    fs::File f = LittleFS.open(buf);
     String tail = FStail(f);
+    // put in preference, then change tz
+    // preferences.putString("TZ-ZoneStr", tail);
     CLOK_chtz(TZ_ENV, tail.c_str());
   } else {
     CLOK_chtz(TZ_ENV, "");
@@ -121,20 +141,26 @@ void processNewZoneFile(String &body, String &etag) {
   unpackTZdata(webGetClient());
   // read version string
   File f = LittleFS.open("/version");
-  uint8_t *buffer = new uint8_t[8];
-  f.read(buffer, 8); // does this put \0 at the end ???
+  int s = f.size();
+  uint8_t buf[s];
+  f.read(buf, s); // not null terminated.
   preferences.putString("TZ-ETag", etag);
-  preferences.putString("TZ-Version", reinterpret_cast<const char*>(buffer));
-  delete []buffer;
+  preferences.putBytes("TZ-Version", buf, s);
+  BLE_TZ_version.writeValue(buf, s, true);
 }
 
+int CUR_TICK = 0;
 void tzCheck(unsigned long &curtime) {
-  Serial.print("Curtime: "); Serial.println(curtime);
-  if (curtime - TZ_PREV_TIME > TZ_CHECK_TIME) {
-    String tzurl = preferences.getString("TZ-URL", TZ_ZONEINFO_URL);
-    String etag = preferences.getString("TZ-ETag");
-    if (getURL(tzurl.c_str(), NULL, processNewZoneFile, etag)) {
-      TZ_PREV_TIME = curtime;
-    } 
+  if (CUR_TICK > TZ_TICK_DELAY) {
+    Serial.print("Curtime: "); Serial.println(curtime);
+    if (curtime - TZ_PREV_TIME > TZ_CHECK_TIME) {
+      String tzurl = preferences.getString("TZ-URL", TZ_ZONEINFO_URL);
+      String etag = preferences.getString("TZ-ETag");
+      if (getURL(tzurl.c_str(), "", processNewZoneFile, etag)) {
+        TZ_PREV_TIME = curtime;
+      } 
+    }
+    CUR_TICK = 0;
   }
+  CUR_TICK++;
 }

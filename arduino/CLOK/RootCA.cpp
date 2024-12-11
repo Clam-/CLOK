@@ -2,8 +2,10 @@
 #include <Preferences.h>
 #include "Prefs.hpp"
 #include "Web.hpp"
+
+const int ROOTCA_URL_LEN = 255;
 // BLE options
-BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, 256);
+BLECharacteristic BLE_RootCA_URL("00000031-5AAD-BAAD-FFFF-5AD5ADBADC1C", BLERead | BLEWrite | BLENotify, ROOTCA_URL_LEN);
 
 extern Preferences preferences;
 // include root let's encrypt
@@ -56,7 +58,16 @@ void rootCA_BLE_Setup(BLEService clokService) {
 }
 
 void rootCAsetup() {
-  BLE_RootCA_URL.writeValue(preferences.getString("ROOTCA-URL", RootCA_URL_default).c_str());
+  if (preferences.isKey("ROOTCA-URL")) {
+    int s;
+    char buf[ROOTCA_URL_LEN+1];
+    s = preferences.getBytesLength("ROOTCA-URL");
+    preferences.getBytes("ROOTCA-URL", buf, s);
+    BLE_RootCA_URL.writeValue(buf, s, true);
+  } else {
+    BLE_RootCA_URL.writeValue(RootCA_URL_default);
+  }
+  
   // check if cert exists in preferences
   size_t size = preferences.getUInt("ROOTCA-len", 0);
   // if doesn't exist, put the default one in, along with length
@@ -71,35 +82,51 @@ void loadRootCA() {
     if (ROOTCA != NULL) { delete[] ROOTCA; }
     ROOTCA_LEN = size;
     char* buffer = new char[ROOTCA_LEN];
+    preferences.getBytes("ROOTCA", buffer, size);
     ROOTCA = buffer;
+  } else {
+    preferences.getBytes("ROOTCA", ROOTCA, size);
   }
-  preferences.getString("ROOTCA", ROOTCA, size); //
 }
 
 void setRootCA(const char* cert, const char* ETag) {
   // check and nuke all ROOTCA if not null
   if (ROOTCA != NULL) { delete[] ROOTCA; }
-  size_t size = preferences.putString("ROOTCA-ETag", ETag);
-  //preferences.putUInt("ROOTCA-ETag-len", size);
-  size = preferences.putString("ROOTCA", cert)+1;
+  preferences.putString("ROOTCA-ETag", ETag);
+  size_t size = preferences.putString("ROOTCA", cert);
   preferences.putUInt("ROOTCA-len", size);
   loadRootCA();
 }
 
 void processNewCA(String &body, String &etag) {
   setRootCA(body.c_str(), etag.c_str());
+  webUpdateCA();
 }
 
 void rootCACheck(unsigned long &now) {
   if (now - ROOTCA_PREV_TIME > ROOTCA_CHECK_TIME) {
-    String url = preferences.getString("ROOTCA-URL", RootCA_URL_default);
+    char url[ROOTCA_URL_LEN+1];
+    if (preferences.isKey("ROOTCA-URL")) {
+      int s;
+      s = preferences.getBytesLength("ROOTCA-URL");
+      preferences.getBytes("ROOTCA-URL", url, s);
+    } else {
+      strcpy(url, RootCA_URL_default);
+    }
     String etag = preferences.getString("ROOTCA-ETag");
-    if (getURL(url.c_str(), NULL, processNewCA, etag)) {
+    if (getURL(url, NULL, processNewCA, etag)) {
       ROOTCA_PREV_TIME = now;
     } 
   }
 }
 
 void rootCAURLwritten(BLEDevice central, BLECharacteristic characteristic) {
-  preferences.putString("ROOTCA-URL", (char*)BLE_RootCA_URL.value());
+  char url[ROOTCA_URL_LEN+1];
+  int s = characteristic.valueLength();
+  memcpy(url, characteristic.value(), s);
+  url[s] = '\0';
+  s++;
+  preferences.putBytes("ROOTCA-URL", url, s);
+  // initiate re-get ROOTCA
+  ROOTCA_PREV_TIME = 0;
 }

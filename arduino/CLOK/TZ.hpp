@@ -20,3 +20,5 @@ void BLE_TZ_timezonewritten(BLEDevice central, BLECharacteristic characteristic)
 void processNewZoneFile(String &body, String &etag);
 
 void tzCheck(unsigned long &curtime);
+
+void updateTZversionChara();

@@ -1,33 +1,28 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
-import '../consts.dart';
-import 'control_base.dart';
+import 'control_string.dart';
 
-class WiFiDeleteControl extends BaseControl<String> {
+class WiFiDeleteControl extends StringControl {
   final List<String> wifiEntries = [];
-  BluetoothCharacteristic? dc;
+  BluetoothCharacteristic dc;
 
   WiFiDeleteControl(super.updatemethod, super.chara, super.optionName, super.optionValue, 
-    {super.display = true, super.notifiable = true, super.writeonly = false, this.dc }
-  );
+    {super.display = true, super.notifiable = true, super.writeonly = false, 
+    required Map<String, BluetoothCharacteristic> extrachars }
+  ): dc = extrachars["wdc"]!;
   
-  void addChara(BluetoothCharacteristic c) { dc = c; }
+  @override
+  String toString() {
+    return wifiEntries.length.toString();
+  }
 
-  @override
-  String decode(ByteData data) {
-    return UTF8_DECODE.convert(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
-  }
-  @override
-  Uint8List encode(String data) {
-    return Uint8List.fromList(utf8.encode(data));
-  }
   @override
   void setValue(ByteData data) { 
     final d = decode(data);
+    if (d == ":") { return; }
     print("Received value: $d to ${chara.uuid}");
     if (!wifiEntries.contains(d)) {
       wifiEntries.add(d);
@@ -38,10 +33,6 @@ class WiFiDeleteControl extends BaseControl<String> {
   @override
   String convertType(String value) {
     return value;
-  }
-  @override
-  void sendData(String value) {
-    dc?.writeValueWithResponse(encode(value));
   }
   
   @override
@@ -60,6 +51,7 @@ class WiFiDeleteControl extends BaseControl<String> {
                 child: ListView.builder(itemBuilder: (context, index) {
                     return RadioListTile(groupValue: selected,
                       value: wifiEntries[index],
+                      title: Text(wifiEntries[index]),
                       onChanged: (value) => selected = value,
                     );
                   },
@@ -74,8 +66,10 @@ class WiFiDeleteControl extends BaseControl<String> {
               ),
               FilledButton (
                 child: const Text('DELETE'),
-                onPressed: () {
-                  if (selected != null && selected!.isNotEmpty) { sendData(selected!); }
+                onPressed: () async {
+                  if (selected != null && selected!.isNotEmpty) {
+                    await dc.writeValueWithResponse(encode(selected!));
+                  }
                   // send value to characteristic...
                   Navigator.pop(context);
                 },

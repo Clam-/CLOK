@@ -13,20 +13,36 @@ abstract class BaseControl<V> implements BaseConverter<V> {
   final bool display;
   final bool notifiable;
   final bool writeonly;
+  bool hasInit = false;
+  bool readonly = true;
   
   BaseControl(this.updatemethod, this.chara, this.optionName, this.optionValue, {this.display = true, this.notifiable = true, this.writeonly = false }) {
     if (!this.writeonly) {
-      //this.getValue();
       if (this.chara.properties.notify) {
         this.chara.value.listen((ByteData d) { setValue(d); updatemethod((){});});
+      }
+      if (!this.chara.properties.read) {
+        this.readonly = false;
       }
     }
   }
   @override
   bool operator ==(other) => optionName.hashCode == other.hashCode;
-
   @override
   int get hashCode => optionName.hashCode;
+
+  @override
+  String toString() {
+    return optionValue.toString();
+  }
+
+  Future<void> init() async {
+    if (hasInit) { return; }
+    if (chara.properties.read) {
+      await chara.readValue(timeout: const Duration(seconds: 2));
+    }
+    hasInit = true;
+  }
 
   void setValue(ByteData data) { 
     print("SetValue: $data");
@@ -49,6 +65,9 @@ abstract class BaseControl<V> implements BaseConverter<V> {
 
   void Function() onTapGen(BuildContext context) {
     // dialog here...
+    if (this.readonly) {
+      return () {};
+    }
     return () {
       showDialog<String>(
         context: context,

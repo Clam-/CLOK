@@ -17,6 +17,7 @@
 #include "Web.hpp"
 #include "TZ.hpp"
 #include "aClok.hpp"
+#include "Alarm.hpp"
 
 void WiFiTask(void *pvParameters); // handling wifi loop
 void BLETask(void *pvParameters); // handling BLE loop
@@ -26,6 +27,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   prefsSetup();
+  clokSetup();
+  AlarmSetup();
   // start background tasks:
   Serial.println("Creating WiFiTask...");
   xTaskCreate(WiFiTask, "WiFiTask",  4096, NULL, 17, NULL);
@@ -34,7 +37,6 @@ void setup() {
   xTaskCreatePinnedToCore(BLETask, "BLETask", 4096, NULL, 17, NULL, 1);
   Serial.println("Creating BackgroundTasks...");
   xTaskCreate(BackgroundTasks, "BackgroundTasks",  8192, NULL, 17, NULL);
-  clokSetup();
   Serial.println("Startup complete.");
 }
 

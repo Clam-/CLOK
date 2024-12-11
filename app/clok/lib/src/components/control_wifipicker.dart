@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_web_bluetooth/flutter_web_bluetooth.dart';
 
-import '../consts.dart';
-import 'control_base.dart';
+import 'control_string.dart';
 
 class WiFiItem implements Comparable<WiFiItem> {
   final int rssi;
@@ -15,28 +13,29 @@ class WiFiItem implements Comparable<WiFiItem> {
   int compareTo(WiFiItem other) { return other.rssi - rssi; }
 }
 
-class WiFiPickerControl extends BaseControl<String> {
-  final TextEditingController wifiController = TextEditingController();
+class WiFiPickerControl extends StringControl {
   final List<DropdownMenuEntry<WiFiItem>> wifiEntries = <DropdownMenuEntry<WiFiItem>>[];
   static Comparator<DropdownMenuEntry<WiFiItem>> nameComparator = (a, b) => a.value.compareTo(b.value);
   WiFiItem? wi;
-  final BluetoothCharacteristic? ssidchar;
-  final BluetoothCharacteristic? keychar;
+  final BluetoothCharacteristic ssidchar;
+  final BluetoothCharacteristic keychar;
 
-  WiFiPickerControl(super.updatemethod, super.chara, super.optionName, super.optionValue, 
-    {super.display = true, super.notifiable = true, super.writeonly = false, this.ssidchar, this.keychar }
-  );
-  
+  WiFiPickerControl(super.updatemethod, super.chara, super.optionName, super.optionValue,
+    {super.display = true, super.notifiable = true, super.writeonly = false, 
+    required Map<String, BluetoothCharacteristic> extrachars }
+  ) : 
+  ssidchar = extrachars["wsc"]!, 
+  keychar = extrachars["wkc"]!;
+
   @override
-  String decode(ByteData data) {
-    return UTF8_DECODE.convert(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+  String toString() {
+    return "Found networks: ${wifiEntries.length}";
   }
-  @override
-  Uint8List encode(String data) {
-    return Uint8List.fromList(utf8.encode(data));
-  }
+
   @override
   void setValue(ByteData data) { 
+    print("RECEIVED BYTES:");
+    print(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
     final d = decode(data);
     final di = d.split("|");
     final rssi = int.tryParse(di[0]);
@@ -58,11 +57,11 @@ class WiFiPickerControl extends BaseControl<String> {
     // ignore value because this is special...
   }
   void sendCustomData(String ssid, String key) async {
-    if (ssidchar != null && ssid.isNotEmpty && keychar != null){
+    if (ssid.isNotEmpty){
       print("Sending SSID: $ssid, Key: $key");
       print("RAW SSID: ${encode(ssid)}, Raw Key: ${encode(key)}");
-      //await ssidchar!.writeValueWithResponse(encode(ssid));
-      //keychar!.writeValueWithResponse(encode(key));
+      await ssidchar.writeValueWithResponse(encode(ssid));
+      await keychar.writeValueWithResponse(encode(key));
     }
   }
   
@@ -82,7 +81,6 @@ class WiFiPickerControl extends BaseControl<String> {
                 children: [
                   DropdownMenu<WiFiItem>(
                     initialSelection: wi,
-                    controller: wifiController,
                     label: const Text('SSID'),
                     dropdownMenuEntries: wifiEntries,
                     onSelected: (WiFiItem? twi) {
